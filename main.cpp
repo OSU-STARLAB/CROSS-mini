@@ -1,0 +1,24 @@
+#include <systemc.h>
+#include "intersection_tb.h"
+
+int sc_main( int argc, char* argv[] ) {
+	sc_report_handler::set_log_file_name("report.log");
+	
+	// ignore everything below this
+	sc_report_handler::set_verbosity_level(SC_DEBUG);
+	
+	// do not print, only log. Default is: SC_LOG | SC_DISPLAY
+	//sc_report_handler::set_actions("tb.dut", SC_INFO, SC_LOG);
+	//sc_report_handler::set_actions("tb", SC_INFO, SC_LOG);
+	
+	Intersection_TB * tb = new Intersection_TB("tb",
+		"test_inputs/fiber_a.csf",
+		"test_inputs/fiber_b.csf",
+		"test_outputs/intersection.log"
+	);
+	SC_REPORT_INFO("main", "simulation starts");
+	sc_start(200, SC_NS);
+	cout << "Simulation finished after " << sc_time_stamp() << endl;
+	delete tb;
+	return 0;
+}
