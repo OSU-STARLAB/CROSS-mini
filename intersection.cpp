@@ -1,18 +1,8 @@
 #include "intersection.h"
 
-void Intersection::flush_listener() {
-    flush_triggered = false;
-    while (true) {
-        wait(flush);
-        flush_triggered = true;
-        flush.cancel();
-    }
-}
-
 void Intersection::intersection_main() {
     // initialization
     bool just_read = false;
-    waiting_on.write(0);
     tensor_element accumulator = 0;
     count_type idx_a=-1, idx_b=-1;  // fails if count_type is unsigned (which it should be...)
     tensor_element a=0, b=0;
@@ -24,28 +14,36 @@ void Intersection::intersection_main() {
     while (true) {
         MODULE_INFO("accumulator is " << accumulator);
         // check if we're done
-        if (!just_read && flush_triggered) {
-            if (values_a.num_available() != 0 &&
+        if (!just_read) {
+            if (done_b &&
+                    values_a.num_available() != 0 &&
                     values_b.num_available() == 0) {
                 // flush a FIFOs
-                indices_a.read();
-                values_a.read();
+                idx_a = indices_a.read();
+                a = values_a.read();
                 MODULE_INFO("flushing a");
-                continue;
+                if (idx_a != idx_b) {
+                    MODULE_INFO("surprise collision!");
+                    continue;
+                }
             }
-            else if (values_a.num_available() == 0 &&
+            else if (done_a &&
+                    values_a.num_available() == 0 &&
                     values_b.num_available() != 0) {
                 // flush b FIFOs
-                indices_b.read();
-                values_b.read();
+                idx_b = indices_b.read();
+                b = values_b.read();
                 MODULE_INFO("flushing b");
-                continue;
+                if (idx_a != idx_b) {
+                    MODULE_INFO("surprise collision!");
+                    continue;
+                }
             }
-            else if (values_a.num_available() == 0 &&
+            else if (done_a && done_b &&
+                    values_a.num_available() == 0 &&
                     values_b.num_available() == 0) {
-                MODULE_INFO("emitting");
                 // actually done
-                flush_triggered = false;
+                MODULE_INFO("emitting");
                 results.write(accumulator);
                 accumulator = 0;
                 
@@ -55,12 +53,6 @@ void Intersection::intersection_main() {
                 idx_a = -1;
                 idx_b = -1;
                 MODULE_INFO("standing by to re-initialize");
-            }
-            else {
-                MODULE_INFO("flush triggered but FIFOs not empty");
-                // Flush triggered, but there are still value pairs here.
-                // Keep processing until current buffered inputs are gone.
-                // Continue as normal.
             }
         }
         
@@ -94,13 +86,12 @@ void Intersection::intersection_main() {
                     MODULE_INFO("waiting for either fiber");
                     wait();
                 }
-            } while (!just_read && !flush_triggered);
+            } while (!just_read);
             //MODULE_INFO("exited loop");
             
         } else if (idx_a < idx_b) {
             // advance only a
             MODULE_INFO("trying to advance a");
-            waiting_on.write(1);
             if (indices_a.nb_read(idx_a)) {
                 a = values_a.read();
                 MODULE_INFO("just received idx_a = " << idx_a << ", a = " << a);
@@ -110,7 +101,6 @@ void Intersection::intersection_main() {
         } else if (idx_a > idx_b){
             // advance only b
             MODULE_INFO("trying to advance b");
-            waiting_on.write(0);
             if (indices_b.nb_read(idx_b)) {
                 b = values_b.read();
                 MODULE_INFO("just received idx_b = " << idx_b << ", b = " << b);

@@ -20,7 +20,8 @@
 */
 SC_MODULE(Intersection_TB) {
 	Intersection dut;
-	sc_in<bool> dut_waiting_on;
+	sc_signal<bool> done_a;
+	sc_signal<bool> done_b;
 	
 	void source_a();
 	void source_b();
@@ -38,7 +39,6 @@ SC_MODULE(Intersection_TB) {
 	) :
 		clk("clk_sig", 1, SC_NS),
 		dut("dut"),
-		done(false),
 		idx_a(-1),
 		idx_b(-1)
 	{
@@ -62,7 +62,8 @@ SC_MODULE(Intersection_TB) {
 		
 		dut.clk(clk);
 		dut.rst(rst);
-		dut_waiting_on(dut.waiting_on);	
+		dut.done_a(done_a);
+		dut.done_b(done_b);
 		
 		SC_THREAD(source_a);
 		sensitive << clk.posedge_event();
@@ -84,6 +85,5 @@ SC_MODULE(Intersection_TB) {
 	private:
 		sc_clock clk;
 		sc_signal<bool> rst;
-		bool done;
 		tensor_element idx_a, idx_b;
 };
