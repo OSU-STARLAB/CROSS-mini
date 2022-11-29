@@ -21,8 +21,9 @@ SC_MODULE(Fetch) {
     sc_in<bool> mem_res_valid;  // mem's outputs are valid
     
     // connection with intersection (ixn) unit
-    Intersection * ixn;
-    sc_signal<bool> done;
+    sc_fifo_out<tensor_element> values_out;
+    sc_fifo_out<count_type> indices_out;
+    sc_out<bool> done;
     
     void fetch_main();
     
