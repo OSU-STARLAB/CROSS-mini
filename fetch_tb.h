@@ -71,6 +71,15 @@ SC_MODULE(Fetch_TB) {
         dut.values_out(values);
         dut.indices_out(indices);
         dut.done(ixn_done);
+        
+        SC_THREAD(control_source);
+        sensitive << clk.posedge_event();
+        
+        SC_THREAD(memory_source);
+        sensitive << clk.posedge_event();
+        
+        SC_THREAD(ixn_sink);
+        sensitive << clk.posedge_event();
     }
     
     ~Fetch_TB() {

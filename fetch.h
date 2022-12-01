@@ -7,6 +7,7 @@ SC_MODULE(Fetch) {
     sc_in<bool> clk;
 
     // connection with control unit
+    sc_event start_job;
     sc_in<pointer_type> start_addr;
     sc_in<pointer_type> end_addr;
     
@@ -32,4 +33,8 @@ SC_MODULE(Fetch) {
         reset_signal_is(rst, true);
         sensitive << clk.pos();
     }
+    
+    private:
+        pointer_type curr_addr;
+        pointer_type stop_addr;
 };
