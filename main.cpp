@@ -18,7 +18,7 @@ int sc_main( int argc, char* argv[] ) {
 		"test_outputs/intersection.log"
 	);*/
 	
-	Fetch_TB * tb = new Fetch_TB("tb", "test_inputs/fiber_a.csf", "out");
+	Fetch_TB * tb = new Fetch_TB("tb", "test_inputs/fetch_ranges.csv", "test_outputs/addresses.log");
 	
 	SC_REPORT_INFO("main", "simulation starts");
 	sc_start(50, SC_NS);

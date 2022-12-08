@@ -1,4 +1,7 @@
 #include "fetch_tb.h"
+#include <cstddef>
+#include <sstream>
+#include <string>
 
 void Fetch_TB::control_source() {
     rst.write(1);
@@ -7,31 +10,26 @@ void Fetch_TB::control_source() {
     wait();
     MODULE_INFO("source waiting");
     
-    start_addr.write(5);
-    end_addr.write(10);
-    wait();
-    dut.start_job.notify();
-    MODULE_INFO("source done 1");
-    wait();
+    std::string line;
+    getline(in, line);  // consume column names
     
-    while (!dut.done) wait();
-    
-    wait(3);
-    
-    start_addr.write(3);
-    end_addr.write(6);
-    wait();
-    dut.start_job.notify();
-    MODULE_INFO("source done 2");
-    wait();
-    
-    while (!dut.done) wait();
+    while (getline(in, line)) {
+        if (line.empty()) break;
         
-    start_addr.write(30);
-    end_addr.write(30);
-    wait();
-    dut.start_job.notify();
-    MODULE_INFO("source done 3");
+        line.replace(line.find(","), 1, " ");
+        std::istringstream iss(line);
+        pointer_type start, end;
+        iss >> start >> end;
+        
+        start_addr.write(start);
+        end_addr.write(end);
+        wait();
+        dut.start_job.notify();
+        MODULE_INFO("source done 1");
+        wait();
+        
+        while (!dut.done) wait();    
+    }
 }
 
 void Fetch_TB::memory_source() {}
