@@ -14,6 +14,7 @@ SC_MODULE(Fetch) {
     // connection with memory unit
     //     request
     sc_out<pointer_type> mem_req_address;
+    sc_out<bool> mem_req_valid;  // request is valid: address written
     sc_in<bool> mem_req_ready;  //  mem is ready for next address
     //     response
     sc_in<tensor_element> mem_res_value;
