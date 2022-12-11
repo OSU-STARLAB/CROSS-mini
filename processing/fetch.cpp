@@ -2,16 +2,12 @@
 
 void Fetch::fetch_main() {
     curr_addr = 0;
-    mem_req_address.write(0);
-    mem_res_ready.write(0);
-    done.write(0);
     
     wait();
     
     while (true) {
         // get job
-        wait(start_job);
-        done.write(0);
+        wait(job_start);
         stop_addr = end_addr.read() + 1;
         curr_addr = start_addr.read();
         MODULE_INFO("job is to read from " << curr_addr << " to " << stop_addr-1);
@@ -20,21 +16,17 @@ void Fetch::fetch_main() {
         // run job
         while (curr_addr != stop_addr) {
             // fetch next element: request
-            while (!mem_req_ready.read()) wait();
-            mem_req_address.write(curr_addr);
-            mem_req_valid.write(1);
-            
-            wait();  // this might be optional
+            while (!mem_ready.read()) wait();
+            mem_read_address.write(curr_addr);
+            wait(1);
+            mem_read_start->notify();
             
             // fetch: response
-            mem_res_ready.write(1);
-            while (!mem_res_valid.read()) wait();
+            wait(mem_done);
             tensor_element elm = mem_res_value.read();
             count_type idx = mem_res_index.read();
-            mem_req_valid.write(0);
-            mem_res_ready.write(1);
             
-            MODULE_INFO("fetched (" << elm << "," << "idx" << ") from " << curr_addr);
+            MODULE_INFO("fetched (" << idx << "," << elm << ") from " << curr_addr);
             
             // increment pointer
             curr_addr += 1;
@@ -44,7 +36,7 @@ void Fetch::fetch_main() {
             values_out.write(elm);
             indices_out.write(idx);
         }
-        done.write(1);
+        job_done->notify();
         MODULE_INFO("finished job");
     }
     MODULE_INFO("finished all jobs");
