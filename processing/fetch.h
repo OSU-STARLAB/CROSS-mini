@@ -1,6 +1,5 @@
 #include <systemc.h>
 #include "../defines.h"
-#include "intersection.h"
 
 SC_MODULE(Fetch) {
     sc_in<bool> rst;
