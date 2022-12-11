@@ -1,9 +1,8 @@
 EXE = sim
 LIBS = -lsystemc -lm -lstdc++
-SRC = *.cpp
 
-${EXE}: ${SRC} *.h Makefile
-	g++ -o "${EXE}" ${SRC} ${LIBS}
+${EXE}: Makefile main.cpp processing/*
+	g++ -o "${EXE}" main.cpp processing/*.cpp ${LIBS}
 
 test: ${EXE}
 	./${EXE} && cat report.log

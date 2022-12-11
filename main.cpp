@@ -1,6 +1,6 @@
 #include <systemc.h>
 //#include "intersection_tb.h"
-#include "fetch_tb.h"
+#include "processing/fetch_tb.h"
 
 int sc_main( int argc, char* argv[] ) {
 	sc_report_handler::set_log_file_name("report.log");
@@ -21,7 +21,7 @@ int sc_main( int argc, char* argv[] ) {
 	Fetch_TB * tb = new Fetch_TB("tb", "test_inputs/fetch_ranges.csv", "test_outputs/addresses.log");
 	
 	SC_REPORT_INFO("main", "simulation starts");
-	sc_start(50, SC_NS);
+	sc_start(100, SC_NS);
 	cout << "Simulation finished after " << sc_time_stamp() << endl;
 	delete tb;
 	return 0;

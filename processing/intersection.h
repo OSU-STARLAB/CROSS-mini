@@ -1,5 +1,5 @@
 #include <systemc.h>
-#include "defines.h"
+#include "../defines.h"
 
 /*
     Intersection Unit
