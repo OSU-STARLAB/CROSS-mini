@@ -17,14 +17,14 @@ void Intersection_TB::source_a() {
 		switch (rand() % 3) {
 			case 0:
 				// read value pair from input file A
-				if (dut.values_a.num_free() > 0) {
+				if (values_a.num_free() > 0) {
 					in_a >> idx_a;
 					in_a >> val;
 					MODULE_INFO("read from file idx_a = " << idx_a << " and a = " << val);
 					
 					// send to DUT
-					dut.values_a.write(val);
-					dut.indices_a.write(idx_a);
+					values_a.write(val);
+					indices_a.write(idx_a);
 					MODULE_INFO("sent to module: idx_a = " << idx_a << " and a = " << val);
 				}
 				break;
@@ -53,14 +53,14 @@ void Intersection_TB::source_b() {
 		switch (rand() % 3) {
 			case 0:
 				// read value pair from input file A
-				if (dut.values_b.num_free() > 0) {
+				if (values_b.num_free() > 0) {
 					in_b >> idx_b;
 					in_b >> val;
 					MODULE_INFO("read from file idx_b = " << idx_b << " and b = " << val);
 					
 					// send to DUT
-					dut.values_b.write(val);
-					dut.indices_b.write(idx_b);
+					values_b.write(val);
+					indices_b.write(idx_b);
 					MODULE_INFO("sent to module: idx_a = " << idx_a << " and a = " << val);
 				}
 				break;
@@ -79,7 +79,7 @@ void Intersection_TB::source_b() {
 
 void Intersection_TB::sink() {
 	tensor_element output;
-	output = dut.results.read();
+	output = results.read();
 	out << output << endl;
 	MODULE_INFO("got output " << output << " at " << sc_time_stamp());
 	sc_stop();

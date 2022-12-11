@@ -20,17 +20,13 @@ SC_MODULE(Intersection) {
     sc_in<bool> done_b;
     
     // these stay in sync with each other
-    sc_fifo<tensor_element> values_a, values_b, results;
-    sc_fifo<count_type> indices_a, indices_b;
+    sc_fifo_in<tensor_element> values_a, values_b;
+    sc_fifo_in<count_type> indices_a, indices_b;
+    sc_fifo_out<tensor_element> results;
     
     void intersection_main();
     
-    SC_CTOR(Intersection) : 
-        values_a(INTERSECTION_FIFO_SIZE),
-        values_b(INTERSECTION_FIFO_SIZE),
-        indices_a(INTERSECTION_FIFO_SIZE),
-        indices_b(INTERSECTION_FIFO_SIZE)
-    {
+    SC_CTOR(Intersection) {
         SC_THREAD(intersection_main);
         reset_signal_is(rst, true);
         sensitive << clk.pos();

@@ -1,6 +1,6 @@
 #include <systemc.h>
-//#include "intersection_tb.h"
-#include "processing/fetch_tb.h"
+#include "processing/intersection_tb.h"
+//#include "processing/fetch_tb.h"
 
 int sc_main( int argc, char* argv[] ) {
 	sc_report_handler::set_log_file_name("report.log");
@@ -12,13 +12,13 @@ int sc_main( int argc, char* argv[] ) {
 	sc_report_handler::set_actions("tb.dut", SC_INFO, SC_LOG);
 	sc_report_handler::set_actions("tb", SC_INFO, SC_LOG);
 	
-	/*Intersection_TB * tb = new Intersection_TB("tb",
+	Intersection_TB * tb = new Intersection_TB("tb",
 		"test_inputs/fiber_a.csf",
 		"test_inputs/fiber_b.csf",
 		"test_outputs/intersection.log"
-	);*/
+	);
 	
-	Fetch_TB * tb = new Fetch_TB("tb", "test_inputs/fetch_ranges.csv", "test_outputs/addresses.log");
+	//Fetch_TB * tb = new Fetch_TB("tb", "test_inputs/fetch_ranges.csv", "test_outputs/addresses.log");
 	
 	SC_REPORT_INFO("main", "simulation starts");
 	sc_start(100, SC_NS);

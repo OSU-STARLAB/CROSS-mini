@@ -23,6 +23,9 @@ SC_MODULE(Intersection_TB) {
 	sc_signal<bool> done_a;
 	sc_signal<bool> done_b;
 	
+	sc_fifo<tensor_element> values_a, values_b, results;
+	sc_fifo<count_type> indices_a, indices_b;
+	
 	void source_a();
 	void source_b();
 	void sink();
@@ -39,6 +42,11 @@ SC_MODULE(Intersection_TB) {
 	) :
 		clk("clk_sig", 1, SC_NS),
 		dut("dut"),
+		values_a(INTERSECTION_FIFO_SIZE),
+		values_b(INTERSECTION_FIFO_SIZE),
+		results(INTERSECTION_FIFO_SIZE),
+		indices_a(INTERSECTION_FIFO_SIZE),
+		indices_b(INTERSECTION_FIFO_SIZE),		
 		idx_a(-1),
 		idx_b(-1)
 	{
@@ -62,6 +70,11 @@ SC_MODULE(Intersection_TB) {
 		
 		dut.clk(clk);
 		dut.rst(rst);
+		dut.values_a(values_a);
+		dut.values_b(values_b);
+		dut.results(results);
+		dut.indices_a(indices_a);
+		dut.indices_b(indices_b);
 		dut.done_a(done_a);
 		dut.done_b(done_b);
 		
