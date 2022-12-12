@@ -1,3 +1,4 @@
+#pragma once
 #include <systemc.h>
 /*
     TYPES
