@@ -1,5 +1,3 @@
-#include <iostream>
-#include <string>
 #include <systemc.h>
 #include "intersection.h"
 
@@ -38,11 +36,11 @@ SC_MODULE(Intersection_TB) {
 		std::string source_b_filename,
 		std::string outputs
 	) :
-		clk("clk_sig", 1, SC_NS),
 		dut("dut"),
 		fiber_a(INTERSECTION_FIFO_SIZE),
 		fiber_b(INTERSECTION_FIFO_SIZE),
-		results(INTERSECTION_FIFO_SIZE)
+		results(INTERSECTION_FIFO_SIZE),
+		clk("clk_sig", 1, SC_NS)
 	{
 		in_a.open(source_a_filename);
 		if (!in_a.is_open()) {

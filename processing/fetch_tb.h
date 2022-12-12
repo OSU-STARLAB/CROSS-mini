@@ -35,8 +35,8 @@ SC_MODULE(Fetch_TB) {
     
     SC_HAS_PROCESS(Fetch_TB);
     Fetch_TB(sc_module_name name, std::string inputs, std::string outputs) :
-        clk("clk_sig", 1, SC_NS),
-        dut("dut")
+        dut("dut"),
+        clk("clk_sig", 1, SC_NS)
     {
         in.open(inputs);
         if (!in.is_open()) {

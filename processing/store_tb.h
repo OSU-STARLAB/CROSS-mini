@@ -1,5 +1,3 @@
-#include <iostream>
-#include <string>
 #include <systemc.h>
 #include "store.h"
 
