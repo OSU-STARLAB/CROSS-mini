@@ -1,22 +1,5 @@
-/*
-    TYPES
-
-    Here are some types that should remain consistent across the design, but
-    the actual choice of type isn't too important. For example, we should
-    be able to decide at elaboration time whether tensors are made of integer
-    or floating-point elements, and what the bit width is.
-*/
-
-#define tensor_element float
-
-// I want this to be unsigned, but I also want a NULL sort of feature.
-//   Currently using -1 in intersection.cpp
-#define count_type sc_int<32>
-
-// Should definitely be unsigned. Bit width should reflect total memory space.
-#define pointer_type sc_uint<32>
-
-
+#include <ostream>
+#include "types.h"
 
 /*
     LOGGING

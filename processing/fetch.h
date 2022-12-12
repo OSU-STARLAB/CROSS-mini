@@ -21,8 +21,7 @@ SC_MODULE(Fetch) {
     sc_event mem_done;
     
     // connection with intersection (ixn) unit
-    sc_fifo_out<tensor_element> values_out;
-    sc_fifo_out<count_type> indices_out;
+    sc_fifo_out<fiber_entry> fiber_out;
     sc_event * job_done;
     
     void fetch_main();

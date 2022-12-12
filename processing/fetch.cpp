@@ -23,18 +23,16 @@ void Fetch::fetch_main() {
             
             // fetch: response
             wait(mem_done);
-            tensor_element elm = mem_res_value.read();
-            count_type idx = mem_res_index.read();
+            fiber_entry ent = fiber_entry(mem_res_index.read(), mem_res_value.read());
             
-            MODULE_INFO("fetched (" << idx << "," << elm << ") from " << curr_addr);
+            MODULE_INFO("fetched " << ent << " from " << curr_addr);
             
             // increment pointer
             curr_addr += 1;
             wait();
             
             // send element to intersection unit
-            values_out.write(elm);
-            indices_out.write(idx);
+            fiber_out.write(ent);
         }
         job_done->notify();
         MODULE_INFO("finished job");

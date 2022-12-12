@@ -57,8 +57,7 @@ void Fetch_TB::ixn_sink() {
     wait();
     
     while (true) {
-        tensor_element value = values.read();
-        tensor_element index = indices.read();
-        MODULE_INFO("received (" << index << "," << value << ")");
+        fiber_entry ent = fiber.read();
+        MODULE_INFO("received " << ent);
     }    
 }

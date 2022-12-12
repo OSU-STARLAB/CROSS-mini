@@ -10,7 +10,6 @@
     should all be evenly filled anyway).
     
     - input flush event will internally be canceled when output is emitted.
-    - input fifos values_* and indices_* should be simultaneously written.
 */
 SC_MODULE(Intersection) {
     sc_in<bool> rst;
@@ -20,8 +19,7 @@ SC_MODULE(Intersection) {
     sc_in<bool> done_b;
     
     // these stay in sync with each other
-    sc_fifo_in<tensor_element> values_a, values_b;
-    sc_fifo_in<count_type> indices_a, indices_b;
+    sc_fifo_in<fiber_entry> fiber_a, fiber_b;
     sc_fifo_out<tensor_element> results;
     
     void intersection_main();

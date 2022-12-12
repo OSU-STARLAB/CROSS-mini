@@ -7,58 +7,52 @@
 	Intersection Testbench
 	
 	Instantiates an Intersection Unit (intersection.cpp) and feeds it inputs read
-	from the fiber_a and fiber_b files. Outputs are written to the outputs file.
+	from the fiber_* definition files. Outputs are written to the outputs file.
 	
 	This module will instantiate the DUT itself, and only requires a clock signal
 	to be supplied from outside.
 	
-	- fiber_* is a string filename. The testbench will handle opening and closing
-	  the file handles, and will exit(1) if it fails.
+	- source_*_filename is a string filename. The testbench will handle opening
+	  and closing the file handles, and will exit(1) if it fails.
 	- outputs is also a string filename. It will be overwritten.
 	- Input file format is newline-separated pairs of space-separated (idx, value)
 	  and must not end with newline because my parsing is dumb
 */
 SC_MODULE(Intersection_TB) {
 	Intersection dut;
-	sc_signal<bool> done_a;
-	sc_signal<bool> done_b;
+	sc_signal<bool> done_a, done_b;
 	
-	sc_fifo<tensor_element> values_a, values_b, results;
-	sc_fifo<count_type> indices_a, indices_b;
+	sc_fifo<fiber_entry> fiber_a, fiber_b;
+	sc_fifo<tensor_element> results;
 	
 	void source_a();
 	void source_b();
 	void sink();
 	
 	std::ofstream out;
-	std::ifstream in_a;
-	std::ifstream in_b;
+	std::ifstream in_a, in_b;
 	
 	SC_HAS_PROCESS(Intersection_TB);
 	Intersection_TB(sc_module_name name,
-		std::string fiber_a,
-		std::string fiber_b,
+		std::string source_a_filename,
+		std::string source_b_filename,
 		std::string outputs
 	) :
 		clk("clk_sig", 1, SC_NS),
 		dut("dut"),
-		values_a(INTERSECTION_FIFO_SIZE),
-		values_b(INTERSECTION_FIFO_SIZE),
-		results(INTERSECTION_FIFO_SIZE),
-		indices_a(INTERSECTION_FIFO_SIZE),
-		indices_b(INTERSECTION_FIFO_SIZE),		
-		idx_a(-1),
-		idx_b(-1)
+		fiber_a(INTERSECTION_FIFO_SIZE),
+		fiber_b(INTERSECTION_FIFO_SIZE),
+		results(INTERSECTION_FIFO_SIZE)
 	{
-		in_a.open(fiber_a);
+		in_a.open(source_a_filename);
 		if (!in_a.is_open()) {
-			perror(fiber_a.c_str());
+			perror(source_a_filename.c_str());
 			exit(1);
 		}
 		
-		in_b.open(fiber_b);
+		in_b.open(source_b_filename);
 		if (!in_b.is_open()) {
-			perror(fiber_b.c_str());
+			perror(source_b_filename.c_str());
 			exit(1);
 		}
 		
@@ -70,11 +64,9 @@ SC_MODULE(Intersection_TB) {
 		
 		dut.clk(clk);
 		dut.rst(rst);
-		dut.values_a(values_a);
-		dut.values_b(values_b);
+		dut.fiber_a(fiber_a);
+		dut.fiber_b(fiber_b);
 		dut.results(results);
-		dut.indices_a(indices_a);
-		dut.indices_b(indices_b);
 		dut.done_a(done_a);
 		dut.done_b(done_b);
 		
@@ -98,5 +90,4 @@ SC_MODULE(Intersection_TB) {
 	private:
 		sc_clock clk;
 		sc_signal<bool> rst;
-		tensor_element idx_a, idx_b;
 };

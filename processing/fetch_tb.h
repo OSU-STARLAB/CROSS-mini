@@ -25,8 +25,7 @@ SC_MODULE(Fetch_TB) {
     sc_event * mem_done;
     
     // intersection unit interface
-    sc_fifo<tensor_element> values;
-    sc_fifo<count_type> indices;
+    sc_fifo<fiber_entry> fiber;
     sc_event job_done;
     
     void control_source();
@@ -71,8 +70,7 @@ SC_MODULE(Fetch_TB) {
         
         
         // ixn
-        dut.values_out(values);
-        dut.indices_out(indices);
+        dut.fiber_out(fiber);
         dut.job_done = &job_done;
         
         SC_THREAD(control_source);

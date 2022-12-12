@@ -4,6 +4,7 @@
 
 void Intersection_TB::source_a() {
 	tensor_element val;
+	count_type idx;
 	done_a = false;
 	srand(time(NULL));
 	
@@ -17,15 +18,15 @@ void Intersection_TB::source_a() {
 		switch (rand() % 3) {
 			case 0:
 				// read value pair from input file A
-				if (values_a.num_free() > 0) {
-					in_a >> idx_a;
+				if (fiber_a.num_free() > 0) {
+					in_a >> idx;
 					in_a >> val;
-					MODULE_INFO("read from file idx_a = " << idx_a << " and a = " << val);
+					fiber_entry ent_a = fiber_entry(idx, val);
+					MODULE_INFO("read from file ent_a = " << ent_a);
 					
 					// send to DUT
-					values_a.write(val);
-					indices_a.write(idx_a);
-					MODULE_INFO("sent to module: idx_a = " << idx_a << " and a = " << val);
+					fiber_a.write(ent_a);
+					MODULE_INFO("sent to module: ent_a = " << ent_a);
 				}
 				break;
 		 	case 1:
@@ -43,6 +44,7 @@ void Intersection_TB::source_a() {
 
 void Intersection_TB::source_b() {
 	tensor_element val;
+	count_type idx;
 	done_b = false;
 	
 	// wait for reset pulse
@@ -53,15 +55,15 @@ void Intersection_TB::source_b() {
 		switch (rand() % 3) {
 			case 0:
 				// read value pair from input file A
-				if (values_b.num_free() > 0) {
-					in_b >> idx_b;
+				if (fiber_b.num_free() > 0) {
+					in_b >> idx;
 					in_b >> val;
-					MODULE_INFO("read from file idx_b = " << idx_b << " and b = " << val);
+					fiber_entry ent_b = fiber_entry(idx, val);
+					MODULE_INFO("read from file ent_b = " << ent_b);
 					
 					// send to DUT
-					values_b.write(val);
-					indices_b.write(idx_b);
-					MODULE_INFO("sent to module: idx_a = " << idx_a << " and a = " << val);
+					fiber_b.write(ent_b);
+					MODULE_INFO("sent to module: ent_b = " << ent_b);
 				}
 				break;
 		 	case 1:
