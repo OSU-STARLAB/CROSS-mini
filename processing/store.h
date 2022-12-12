@@ -8,6 +8,9 @@ SC_MODULE(Store) {
     // connection with control unit
     sc_fifo_in<pointer_type> destination;
     
+    // connection with intersection unit
+    sc_fifo_in<tensor_element> results;
+    
     // connection with memory unit
     //     request
     sc_in<bool> mem_ready;
@@ -16,9 +19,6 @@ SC_MODULE(Store) {
     sc_event * mem_write_start;
     //     response
     sc_event mem_done;
-    
-    // connection with intersection unit
-    sc_fifo_in<tensor_element> results;
     
     void store_main();
     
