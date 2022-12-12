@@ -1,12 +1,16 @@
 #include "intersection_tb.h"
 #include <random>
+#include <sstream>
 #include <time.h>
 
 void Intersection_TB::source_a() {
 	tensor_element val;
 	count_type idx;
 	done_a = false;
-	srand(time(NULL));
+	srand(time(NULL)); 
+	
+	std::string line;
+	getline(in_a, line);
 	
 	// generate reset pulse
 	rst.write(1);
@@ -14,28 +18,33 @@ void Intersection_TB::source_a() {
 	rst.write(0);
 	wait();
 	
-	do {
+	while (getline(in_a, line)) {
 		switch (rand() % 3) {
 			case 0:
-				// read value pair from input file A
-				if (fiber_a.num_free() > 0) {
-					in_a >> idx;
-					in_a >> val;
-					fiber_entry ent_a = fiber_entry(idx, val);
-					MODULE_INFO("read from file ent_a = " << ent_a);
-					
-					// send to DUT
-					fiber_a.write(ent_a);
-					MODULE_INFO("sent to module: ent_a = " << ent_a);
-				}
-				break;
+		 		wait(5);
 		 	case 1:
 				wait(2);
 			case 2:
 				break;
-		}	
+		}
+		
+		// read value pair from input file A
+		if (fiber_a.num_free() > 0) {
+			if (!getline(in_a, line))
+				break;
+			line.replace(line.find(","), 1, " ");
+			std::istringstream iss(line);
+			iss >> idx >> val;
+
+			fiber_entry ent_a = fiber_entry(idx, val);
+			MODULE_INFO("read from file ent_a = " << ent_a);
+			
+			// send to DUT
+			fiber_a.write(ent_a);
+			MODULE_INFO("sent to module: ent_a = " << ent_a);
+		}
 		wait(1);
-	} while (in_a.peek() != EOF);
+	}
 	
 	wait();
 	done_a = true;
@@ -47,32 +56,40 @@ void Intersection_TB::source_b() {
 	count_type idx;
 	done_b = false;
 	
+	std::string line;
+	getline(in_b, line);
+	
 	// wait for reset pulse
 	wait();
 	wait();
 	
-	do {
+	while (getline(in_b, line)) {
 		switch (rand() % 3) {
 			case 0:
-				// read value pair from input file A
-				if (fiber_b.num_free() > 0) {
-					in_b >> idx;
-					in_b >> val;
-					fiber_entry ent_b = fiber_entry(idx, val);
-					MODULE_INFO("read from file ent_b = " << ent_b);
-					
-					// send to DUT
-					fiber_b.write(ent_b);
-					MODULE_INFO("sent to module: ent_b = " << ent_b);
-				}
-				break;
+		 		wait(5);
 		 	case 1:
 				wait(2);
 			case 2:
 				break;
-		}	
+		}
+		
+		// read value pair from input file A
+		if (fiber_b.num_free() > 0) {
+			if (!getline(in_b, line))
+				break;
+			line.replace(line.find(","), 1, " ");
+			std::istringstream iss(line);
+			iss >> idx >> val;
+
+			fiber_entry ent_b = fiber_entry(idx, val);
+			MODULE_INFO("read from file ent_b = " << ent_b);
+			
+			// send to DUT
+			fiber_b.write(ent_b);
+			MODULE_INFO("sent to module: ent_b = " << ent_b);
+		}
 		wait(1);
-	} while (in_b.peek() != EOF);
+	}
 	
 	wait();
 	done_b = true;

@@ -13,8 +13,8 @@
 	- source_*_filename is a string filename. The testbench will handle opening
 	  and closing the file handles, and will exit(1) if it fails.
 	- outputs is also a string filename. It will be overwritten.
-	- Input file format is newline-separated pairs of space-separated (idx, value)
-	  and must not end with newline because my parsing is dumb
+	- Input file format is csv with a single `idx,value` pair on each line,
+	  plus the first line is ignored as a comment.
 */
 SC_MODULE(Intersection_TB) {
 	Intersection dut;
