@@ -8,22 +8,23 @@ void Fetch::fetch_main() {
     while (true) {
         // get job
         wait(job_start);
-        stop_addr = end_addr.read() + 1;
-        curr_addr = start_addr.read();
+        stop_addr = end_addr;
+		stop_addr++;
+        curr_addr = start_addr;
         MODULE_INFO("job is to read from " << curr_addr << " to " << stop_addr-1);
         wait();
         
         // run job
         while (curr_addr != stop_addr) {
             // fetch next element: request
-            while (!mem_ready.read()) wait();
+            while (!mem_ready) wait();
             mem_read_address.write(curr_addr);
             wait(1);
             mem_read_start->notify();
             
             // fetch: response
             wait(mem_done);
-            fiber_entry ent = fiber_entry(mem_res_index.read(), mem_res_value.read());
+            fiber_entry ent = fiber_entry(mem_res_index, mem_res_value);
             
             MODULE_INFO("fetched " << ent << " from " << curr_addr);
             
