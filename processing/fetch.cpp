@@ -2,12 +2,14 @@
 
 void Fetch::fetch_main() {
     curr_addr = 0;
+    done = 0;
     
     wait();
     
     while (true) {
         // get job
         wait(job_start);
+        done = 0;
         stop_addr = end_addr;
 		stop_addr++;
         curr_addr = start_addr;
@@ -36,6 +38,7 @@ void Fetch::fetch_main() {
             fiber_out.write(ent);
         }
         job_done.notify();
+        done = 1;
         MODULE_INFO("finished job");
     }
     MODULE_INFO("finished all jobs");

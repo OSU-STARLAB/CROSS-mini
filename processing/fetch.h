@@ -23,6 +23,7 @@ SC_MODULE(Fetch) {
     // connection with intersection (ixn) unit
     sc_fifo_out<fiber_entry> fiber_out;
     sc_event & job_done;
+    sc_out<bool> done;
     
     void fetch_main();
     
