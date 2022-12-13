@@ -37,7 +37,7 @@ void Fetch_TB::memory_source() {
     
     while (true) {
         mem_ready = true;
-        wait(mem_read_start);
+        wait(mem_read);
         
         mem_ready = false;
         pointer_type ptr = mem_read_address;
@@ -49,7 +49,7 @@ void Fetch_TB::memory_source() {
         mem_res_index.write(index);
         wait();
         
-        mem_done->notify();
+        mem_done.notify();
     }
 }
 

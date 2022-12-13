@@ -20,7 +20,7 @@ void Fetch::fetch_main() {
             while (!mem_ready) wait();
             mem_read_address.write(curr_addr);
             wait(1);
-            mem_read_start->notify();
+            mem_read.notify();
             
             // fetch: response
             wait(mem_done);
@@ -35,7 +35,7 @@ void Fetch::fetch_main() {
             // send element to intersection unit
             fiber_out.write(ent);
         }
-        job_done->notify();
+        job_done.notify();
         MODULE_INFO("finished job");
     }
     MODULE_INFO("finished all jobs");
