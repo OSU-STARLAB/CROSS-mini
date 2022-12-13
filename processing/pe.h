@@ -1,0 +1,123 @@
+#include <systemc>
+#include "../defines.h"
+
+#include "fetch.h"
+#include "intersection.h"
+#include "store.h"
+
+SC_MODULE(PE) {
+    sc_in<bool> rst;
+    sc_in<bool> clk;
+    
+    // connections with control unit
+    sc_in<pointer_type> fiber_a_start;
+    sc_in<pointer_type> fiber_a_end;
+    sc_in<pointer_type> fiber_b_start;
+    sc_in<pointer_type> fiber_b_end;
+    sc_in<pointer_type> destination;
+    sc_event & job_start;  // control tells us to start
+    sc_event & job_done;  // we tell control we're done
+    
+    // connections with memory unit
+    sc_in<bool> mem_ready;
+    sc_out<pointer_type> mem_read_address_a;
+    sc_in<tensor_element> mem_res_value_a;  // data that's fetched
+    sc_in<count_type> mem_res_index_a;  // data that's fetched
+    sc_event & mem_read_a;  // we tell mem to read
+    sc_event & mem_done_a;  // mem tells us it's done
+    
+    sc_out<pointer_type> mem_read_address_b;
+    sc_in<tensor_element> mem_res_value_b;
+    sc_in<count_type> mem_res_index_b;
+    sc_event & mem_read_b;
+    sc_event & mem_done_b;
+    
+    sc_out<pointer_type> mem_write_address_c;
+    sc_out<tensor_element> mem_write_value_c;
+    sc_event & mem_write_c;
+    sc_event & mem_done_c;
+    
+    void pe_destination_fifo();
+    
+    SC_HAS_PROCESS(PE);
+    PE (sc_module_name name, sc_event & job_start, sc_event & job_done,
+        sc_event & mem_read_a, sc_event & mem_done_a,
+        sc_event & mem_read_b, sc_event & mem_done_b,
+        sc_event & mem_write_c, sc_event & mem_done_c
+    ) :
+        job_start(job_start),
+        job_done(job_done),
+        mem_read_a(mem_read_a),
+        mem_done_a(mem_done_a),
+        mem_read_b(mem_read_b),
+        mem_done_b(mem_done_b),
+        mem_write_c(mem_write_c),
+        mem_done_c(mem_done_c),
+        fetch_a("fetch_a", job_start, job_done, mem_read_a, mem_done_a),
+        fetch_b("fetch_b", job_start, job_done, mem_read_b, mem_done_b),
+        fiber_a(INTERSECTION_FIFO_SIZE),
+        fiber_b(INTERSECTION_FIFO_SIZE),
+        ixn("ixn"),
+        results(INTERSECTION_FIFO_SIZE),
+        store("store", mem_write_c, mem_done_c),
+        
+        rst("reset"),
+        clk("clock"),
+        fiber_a_start("a_start"),
+        fiber_a_end("a_end"),
+        fiber_b_start("b_start"),
+        fiber_b_end("b_end"),
+        destination("dest"),
+        mem_ready("mem_ready"),
+        mem_res_value_a("mem_val_a"),
+        mem_res_index_a("mem_idx_a"),
+        mem_res_value_b("mem_val_b"),
+        mem_res_index_b("mem_idx_b")
+    {
+        // clock and reset
+        fetch_a.clk(clk); fetch_a.rst(rst);
+        fetch_b.clk(clk); fetch_b.rst(rst);
+        ixn.clk(clk);     ixn.rst(rst);
+        store.clk(clk);   store.rst(rst);
+        
+        // FIFO connections
+        fetch_a.fiber_out(fiber_a);
+        fetch_b.fiber_out(fiber_b);
+        ixn.fiber_a(fiber_a);
+        ixn.fiber_b(fiber_b);
+        ixn.results(results);
+        store.results(results);
+        
+        // control connections
+        fetch_a.start_addr(fiber_a_start);
+        fetch_a.end_addr(fiber_a_end);
+        fetch_b.start_addr(fiber_b_start);
+        fetch_b.end_addr(fiber_b_end);
+        ixn.done_a(fetch_a.done);
+        ixn.done_b(fetch_b.done);
+        store.destination(destinations);
+        
+        // memory connections
+        fetch_a.mem_read_address(mem_read_address_a);
+        fetch_a.mem_res_value(mem_res_value_a);
+        fetch_a.mem_res_index(mem_res_index_a);
+        fetch_b.mem_read_address(mem_read_address_b);
+        fetch_b.mem_res_value(mem_res_value_b);
+        fetch_b.mem_res_index(mem_res_index_b);
+        store.mem_write_address(mem_write_address_c);
+        store.mem_write_value(mem_write_value_c);
+        
+        // internally there's a FIFO but externally it's a signal.
+        // This thread queues them up.
+        SC_THREAD(pe_destination_fifo);
+        sensitive << clk.posedge_event();
+    }
+    
+    private:
+        Fetch fetch_a, fetch_b;
+        sc_fifo<fiber_entry> fiber_a, fiber_b;
+        Intersection ixn;
+        sc_fifo<tensor_element> results;
+        Store store;
+        sc_fifo<pointer_type> destinations;
+};
