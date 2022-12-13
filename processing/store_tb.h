@@ -11,8 +11,8 @@ SC_MODULE(Store_TB) {
     sc_signal<bool> mem_ready;
     sc_signal<pointer_type> mem_write_address;
     sc_signal<tensor_element> mem_write_value;
-    sc_event mem_write_start;
-    sc_event * mem_done;
+    sc_event mem_write;
+    sc_event mem_done;
     
     // connection with intersection unit
     sc_fifo<tensor_element> results;
@@ -22,7 +22,7 @@ SC_MODULE(Store_TB) {
     
     SC_HAS_PROCESS(Store_TB);
     Store_TB(sc_module_name name) :
-        dut("dut"),
+        dut("dut", mem_write, mem_done),
         clk("clk_sig", 1, SC_NS),
         destination(INTERSECTION_FIFO_SIZE),
         results(INTERSECTION_FIFO_SIZE)
@@ -36,8 +36,6 @@ SC_MODULE(Store_TB) {
         dut.mem_ready(mem_ready);
         dut.mem_write_address(mem_write_address);
         dut.mem_write_value(mem_write_value);
-        dut.mem_write_start = &mem_write_start;
-        mem_done = &dut.mem_done;
         
         SC_THREAD(control_ixn_source);
         sensitive << clk.posedge_event();

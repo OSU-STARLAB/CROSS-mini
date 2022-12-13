@@ -16,13 +16,17 @@ SC_MODULE(Store) {
     sc_in<bool> mem_ready;
     sc_out<pointer_type> mem_write_address;
     sc_out<tensor_element> mem_write_value;
-    sc_event * mem_write_start;
+    sc_event & mem_write;
     //     response
-    sc_event mem_done;
+    sc_event & mem_done;
     
     void store_main();
     
-    SC_CTOR(Store) {
+    SC_HAS_PROCESS(Store);
+    Store (sc_module_name name, sc_event & mem_write, sc_event & mem_done) :
+        mem_write(mem_write),
+        mem_done(mem_done)
+    {
         SC_THREAD(store_main);
         reset_signal_is(rst, true);
         sensitive << clk.pos();

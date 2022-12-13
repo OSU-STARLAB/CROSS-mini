@@ -28,13 +28,13 @@ void Store_TB::memory_iface() {
     mem_ready = 1;
     
     while (true) {
-        wait(mem_write_start);
+        wait(mem_write);
         mem_ready = 0;
         pointer_type address = mem_write_address;
         tensor_element value = mem_write_value;
         MODULE_INFO("Writing " << value << " at " << address);
         wait(3);
         mem_ready = 1;
-        mem_done->notify();
+        mem_done.notify();
     }
 }
