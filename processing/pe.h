@@ -37,6 +37,9 @@ SC_MODULE(PE) {
     sc_event & mem_write_c;
     sc_event & mem_done_c;
     
+    sc_signal<bool> fetch_a_done;
+    sc_signal<bool> fetch_b_done;
+    
     void pe_destination_fifo();
     
     SC_HAS_PROCESS(PE);
@@ -59,20 +62,7 @@ SC_MODULE(PE) {
         fiber_b(INTERSECTION_FIFO_SIZE),
         ixn("ixn"),
         results(INTERSECTION_FIFO_SIZE),
-        store("store", mem_write_c, mem_done_c),
-        
-        rst("reset"),
-        clk("clock"),
-        fiber_a_start("a_start"),
-        fiber_a_end("a_end"),
-        fiber_b_start("b_start"),
-        fiber_b_end("b_end"),
-        destination("dest"),
-        mem_ready("mem_ready"),
-        mem_res_value_a("mem_val_a"),
-        mem_res_index_a("mem_idx_a"),
-        mem_res_value_b("mem_val_b"),
-        mem_res_index_b("mem_idx_b")
+        store("store", mem_write_c, mem_done_c)
     {
         // clock and reset
         fetch_a.clk(clk); fetch_a.rst(rst);
@@ -93,24 +83,29 @@ SC_MODULE(PE) {
         fetch_a.end_addr(fiber_a_end);
         fetch_b.start_addr(fiber_b_start);
         fetch_b.end_addr(fiber_b_end);
-        ixn.done_a(fetch_a.done);
-        ixn.done_b(fetch_b.done);
+        fetch_a.done(fetch_a_done);
+        fetch_b.done(fetch_b_done);
+        ixn.done_a(fetch_a_done);
+        ixn.done_b(fetch_b_done);
         store.destination(destinations);
         
         // memory connections
+        fetch_a.mem_ready(mem_ready),
         fetch_a.mem_read_address(mem_read_address_a);
         fetch_a.mem_res_value(mem_res_value_a);
         fetch_a.mem_res_index(mem_res_index_a);
+        fetch_b.mem_ready(mem_ready),
         fetch_b.mem_read_address(mem_read_address_b);
         fetch_b.mem_res_value(mem_res_value_b);
         fetch_b.mem_res_index(mem_res_index_b);
+        store.mem_ready(mem_ready);
         store.mem_write_address(mem_write_address_c);
         store.mem_write_value(mem_write_value_c);
         
         // internally there's a FIFO but externally it's a signal.
         // This thread queues them up.
         SC_THREAD(pe_destination_fifo);
-        sensitive << clk.posedge_event();
+        //sensitive << clk.posedge_event();
     }
     
     private:
