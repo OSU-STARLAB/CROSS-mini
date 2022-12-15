@@ -7,7 +7,7 @@
 
 SC_MODULE(PE) {
     sc_in<bool> rst;
-    sc_in<bool> clk;
+    sc_in_clk clk;
     
     // connections with control unit
     sc_in<pointer_type> fiber_a_start;
@@ -21,14 +21,12 @@ SC_MODULE(PE) {
     // connections with memory unit
     sc_in<bool> mem_ready;
     sc_out<pointer_type> mem_read_address_a;
-    sc_in<tensor_element> mem_res_value_a;  // data that's fetched
-    sc_in<count_type> mem_res_index_a;  // data that's fetched
+    sc_in<fiber_entry> mem_res_value_a;  // data that's fetched
     sc_event & mem_read_a;  // we tell mem to read
     sc_event & mem_done_a;  // mem tells us it's done
     
     sc_out<pointer_type> mem_read_address_b;
-    sc_in<tensor_element> mem_res_value_b;
-    sc_in<count_type> mem_res_index_b;
+    sc_in<fiber_entry> mem_res_value_b;
     sc_event & mem_read_b;
     sc_event & mem_done_b;
     
@@ -93,11 +91,9 @@ SC_MODULE(PE) {
         fetch_a.mem_ready(mem_ready),
         fetch_a.mem_read_address(mem_read_address_a);
         fetch_a.mem_res_value(mem_res_value_a);
-        fetch_a.mem_res_index(mem_res_index_a);
         fetch_b.mem_ready(mem_ready),
         fetch_b.mem_read_address(mem_read_address_b);
         fetch_b.mem_res_value(mem_res_value_b);
-        fetch_b.mem_res_index(mem_res_index_b);
         store.mem_ready(mem_ready);
         store.mem_write_address(mem_write_address_c);
         store.mem_write_value(mem_write_value_c);
@@ -105,7 +101,7 @@ SC_MODULE(PE) {
         // internally there's a FIFO but externally it's a signal.
         // This thread queues them up.
         SC_THREAD(pe_destination_fifo);
-        //sensitive << clk.posedge_event();
+        sensitive << clk;
     }
     
     private:

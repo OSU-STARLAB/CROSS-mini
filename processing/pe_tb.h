@@ -16,14 +16,12 @@ SC_MODULE(PE_TB) {
     // memory unit
     sc_signal<bool> mem_ready;
     sc_signal<pointer_type> mem_read_address_a;
-    sc_signal<tensor_element> mem_res_value_a;  // data that's fetched
-    sc_signal<count_type> mem_res_index_a;  // data that's fetched
+    sc_signal<fiber_entry> mem_res_value_a;  // data that's fetched
     sc_event mem_read_a;  // we tell mem to read
     sc_event mem_done_a;  // mem tells us it's done
     
     sc_signal<pointer_type> mem_read_address_b;
-    sc_signal<tensor_element> mem_res_value_b;
-    sc_signal<count_type> mem_res_index_b;
+    sc_signal<fiber_entry> mem_res_value_b;
     sc_event mem_read_b;
     sc_event mem_done_b;
     
@@ -57,11 +55,9 @@ SC_MODULE(PE_TB) {
         dut.mem_ready(mem_ready);
         dut.mem_read_address_a(mem_read_address_a);
         dut.mem_res_value_a(mem_res_value_a);
-        dut.mem_res_index_a(mem_res_index_a);
         
         dut.mem_read_address_b(mem_read_address_b);
         dut.mem_res_value_b(mem_res_value_b);
-        dut.mem_res_index_b(mem_res_index_b);
         
         dut.mem_write_address_c(mem_write_address_c);
         dut.mem_write_value_c(mem_write_value_c);

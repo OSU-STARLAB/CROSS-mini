@@ -3,7 +3,7 @@
 
 SC_MODULE(Fetch) {
     sc_in<bool> rst;
-    sc_in<bool> clk;
+    sc_in_clk clk;
 
     // connection with control unit
     sc_event & job_start;
@@ -16,8 +16,7 @@ SC_MODULE(Fetch) {
     sc_out<pointer_type> mem_read_address;
     sc_event & mem_read;  // tell mem to read addr
     //     response
-    sc_in<tensor_element> mem_res_value;
-    sc_in<count_type> mem_res_index;
+    sc_in<fiber_entry> mem_res_value;
     sc_event & mem_done;
     
     // connection with intersection (ixn) unit

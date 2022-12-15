@@ -2,11 +2,12 @@ EXE = sim
 LIBS = -lsystemc -lm -lstdc++
 TOP_SRC = main.cpp types.cpp
 
-${EXE}: Makefile ${TOP_SRC} processing/*
+${EXE}: ${TOP_SRC} processing/*
 	g++ -o "${EXE}" ${TOP_SRC} processing/*.cpp ${LIBS}
 
 test: ${EXE}
-	./${EXE}
+	@echo ./${EXE}
+	@SYSTEMC_DISABLE_COPYRIGHT_MESSAGE=1 ./${EXE}
 	@echo
 	cat report.log
 

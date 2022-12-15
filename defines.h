@@ -35,3 +35,5 @@
 */
 
 #define INTERSECTION_FIFO_SIZE 4
+#define MEMORY_SIZE 100
+#define PE_COUNT 8

@@ -45,8 +45,7 @@ void Fetch_TB::memory_source() {
         count_type index = ptr * 2;
         wait();
         
-        mem_res_value.write(value);
-        mem_res_index.write(index);
+        mem_res_value.write(fiber_entry(index, value));
         wait();
         
         mem_done.notify();

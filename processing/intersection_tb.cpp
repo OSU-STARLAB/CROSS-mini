@@ -30,8 +30,6 @@ void Intersection_TB::source_a() {
 		
 		// read value pair from input file A
 		if (fiber_a.num_free() > 0) {
-			if (!getline(in_a, line))
-				break;
 			line.replace(line.find(","), 1, " ");
 			std::istringstream iss(line);
 			iss >> idx >> val;
@@ -75,8 +73,6 @@ void Intersection_TB::source_b() {
 		
 		// read value pair from input file A
 		if (fiber_b.num_free() > 0) {
-			if (!getline(in_b, line))
-				break;
 			line.replace(line.find(","), 1, " ");
 			std::istringstream iss(line);
 			iss >> idx >> val;

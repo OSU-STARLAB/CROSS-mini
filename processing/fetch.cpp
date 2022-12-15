@@ -26,16 +26,15 @@ void Fetch::fetch_main() {
             
             // fetch: response
             wait(mem_done);
-            fiber_entry ent = fiber_entry(mem_res_index, mem_res_value);
             
-            MODULE_INFO("fetched " << ent << " from " << curr_addr);
+            MODULE_INFO("fetched " << mem_res_value << " from " << curr_addr);
             
             // increment pointer
             curr_addr += 1;
             wait();
             
             // send element to intersection unit
-            fiber_out.write(ent);
+            fiber_out.write(mem_res_value);
         }
         job_done.notify();
         done = 1;

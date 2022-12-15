@@ -18,8 +18,7 @@ SC_MODULE(Fetch_TB) {
     sc_signal<pointer_type> mem_read_address;
     sc_event mem_read;
     //     response
-    sc_signal<tensor_element> mem_res_value;
-    sc_signal<count_type> mem_res_index;
+    sc_signal<fiber_entry> mem_res_value;
     sc_event mem_done;
     
     // intersection unit interface
@@ -61,7 +60,6 @@ SC_MODULE(Fetch_TB) {
         dut.mem_ready(mem_ready);
         dut.mem_read_address(mem_read_address);
         dut.mem_res_value(mem_res_value);
-        dut.mem_res_index(mem_res_index);
         
         
         // ixn
