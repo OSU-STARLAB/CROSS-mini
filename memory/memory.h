@@ -1,0 +1,37 @@
+#include <systemc>
+#include "../defines.h"
+
+SC_MODULE(Mem) {
+    sc_in<bool> clk;
+    sc_out<bool> ready;
+    
+    // read ports: fetching fibers
+    sc_vector<sc_in<pointer_type>> read_addr;
+    sc_vector<sc_out<fiber_entry>> read_value;
+    sc_vector<sc_event> mem_read;
+    sc_vector<sc_event> mem_read_done;
+    
+    // write ports: storing results
+    sc_vector<sc_in<pointer_type>> write_addr;
+    sc_vector<sc_in<fiber_entry>> write_value;
+    sc_vector<sc_event> mem_write;
+    sc_vector<sc_event> mem_write_done;
+    
+    SC_CTOR(Mem) :
+        contents("contents", MEMORY_SIZE),
+        
+        read_addr("read_addr", PE_COUNT*2),
+        read_value("read_value", PE_COUNT*2),
+        mem_read("mem_read", PE_COUNT*2),
+        mem_read_done("mem_read_done", PE_COUNT*2),
+        
+        write_addr("write_addr", PE_COUNT),
+        write_value("write_value", PE_COUNT),
+        mem_write("mem_write", PE_COUNT),
+        mem_write_done("mem_write_done", PE_COUNT)
+    {}
+    
+    private:
+        // actual memory contents
+        sc_vector<fiber_entry> contents;
+};
