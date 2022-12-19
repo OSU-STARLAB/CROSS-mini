@@ -17,6 +17,9 @@ SC_MODULE(Mem) {
     sc_vector<sc_event> mem_write;
     sc_vector<sc_event> mem_write_done;
     
+    void read_listener();
+    void write_listener();
+    
     SC_CTOR(Mem) :
         contents("contents", MEMORY_SIZE),
         
@@ -24,14 +27,24 @@ SC_MODULE(Mem) {
         read_value("read_value", PE_COUNT*2),
         mem_read("mem_read", PE_COUNT*2),
         mem_read_done("mem_read_done", PE_COUNT*2),
+        read_delays(PE_COUNT*2, 0),
         
         write_addr("write_addr", PE_COUNT),
         write_value("write_value", PE_COUNT),
         mem_write("mem_write", PE_COUNT),
-        mem_write_done("mem_write_done", PE_COUNT)
-    {}
+        mem_write_done("mem_write_done", PE_COUNT),
+        write_delays(PE_COUNT*2, 0)
+    {
+        SC_THREAD(read_listener);
+        sensitive << clk.pos();
+        
+        SC_THREAD(write_listener);
+        sensitive << clk.pos();
+    }
     
     private:
         // actual memory contents
         sc_vector<fiber_entry> contents;
+        std::vector<uint> read_delays;
+        std::vector<uint> write_delays;
 };
