@@ -50,9 +50,9 @@ void Mem::write_listener() {
                     contents[mem_addr] = write_value[i];
                     write_delays[i] = MEMORY_WRITE_LATENCY;
                 // decrement delay counter. If zero, finish up
-                } else if (--read_delays[i] == 0) {
-                    mem_read[i].cancel();
-                    mem_read_done[i].notify();
+                } else if (--write_delays[i] == 0) {
+                    mem_write[i].cancel();
+                    mem_write_done[i].notify();
                 }
             }
         }
