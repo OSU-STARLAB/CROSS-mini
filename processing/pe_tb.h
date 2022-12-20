@@ -37,11 +37,11 @@ SC_MODULE(PE_TB) {
     
     SC_HAS_PROCESS(PE_TB);
     PE_TB(sc_module_name name) :
-        clk("clk_sig", 1, SC_NS),
         dut("dut", job_start, job_done,
             mem_read_a, mem_done_a,
             mem_read_b, mem_done_b,
-            mem_write_c, mem_done_c)
+            mem_write_c, mem_done_c),
+        clk("clk_sig", 1, SC_NS)
     {
         dut.clk(clk);
         dut.rst(rst);

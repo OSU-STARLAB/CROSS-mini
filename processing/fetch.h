@@ -31,9 +31,9 @@ SC_MODULE(Fetch) {
         sc_event & mem_read, sc_event & mem_done
     ) :
         job_start(job_start),
-        job_done(job_done),
         mem_read(mem_read),
-        mem_done(mem_done)
+        mem_done(mem_done),
+        job_done(job_done)
     {
         SC_THREAD(fetch_main);
         reset_signal_is(rst, true);

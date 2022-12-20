@@ -23,9 +23,9 @@ SC_MODULE(Store_TB) {
     SC_HAS_PROCESS(Store_TB);
     Store_TB(sc_module_name name) :
         dut("dut", mem_write, mem_done),
-        clk("clk_sig", 1, SC_NS),
         destination(INTERSECTION_FIFO_SIZE),
-        results(INTERSECTION_FIFO_SIZE)
+        results(INTERSECTION_FIFO_SIZE),
+        clk("clk_sig", 1, SC_NS)
     {
         dut.clk(clk);
         dut.rst(rst);
