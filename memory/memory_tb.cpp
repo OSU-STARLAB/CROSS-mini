@@ -5,8 +5,9 @@
 SC_MODULE(Mem_TB) {
     Mem dut;
     
-    void mem_port_0();
-    //void mem_port_1();
+    void mem_repl();
+    void mem_repl_callback_read();
+    void mem_repl_callback_write();
     
     SC_CTOR(Mem_TB) :
         dut("dut"),
@@ -19,17 +20,23 @@ SC_MODULE(Mem_TB) {
         for (int i = 0; i < PE_COUNT*2; i++) {
             dut.read_addr[i](read_addr[i]);
             dut.read_value[i](read_value[i]);
+            read_any_done |= dut.mem_read_done[i];
         }
         for (int i = 0; i < PE_COUNT; i++) {
             dut.write_addr[i](write_addr[i]);
             dut.write_value[i](write_value[i]);
+            write_any_done |= dut.mem_write_done[i];
         }
         
         dut.clk(clk);
         dut.ready(ready);
         
-        SC_THREAD(mem_port_0);
+        SC_THREAD(mem_repl);
         sensitive << clk.posedge_event();
+        
+        SC_THREAD(mem_repl_callback_read);
+        SC_THREAD(mem_repl_callback_write);
+        
         
         /*SC_THREAD(mem_port_1);
         sensitive << clk.posedge_event();
@@ -46,6 +53,9 @@ SC_MODULE(Mem_TB) {
         // write ports: storing results
         sc_vector<sc_signal<pointer_type>> write_addr;
         sc_vector<sc_signal<fiber_entry>> write_value;
+        
+        sc_event_or_list read_any_done;
+        sc_event_or_list write_any_done;
 };
 
 int sc_main( int argc, char* argv[] ) {
@@ -67,7 +77,7 @@ int sc_main( int argc, char* argv[] ) {
 	return 0;
 }
 
-void Mem_TB::mem_port_0() {
+void Mem_TB::mem_repl() {
     MODULE_INFO("entering mem tb thread");
     rst = 0;
     wait();
@@ -89,48 +99,55 @@ void Mem_TB::mem_port_0() {
         cin >> cmd;
         switch (cmd) {
             case 'r':  // read
-                cout << "idx: " << endl;
-                cin >> i;
+                do {
+                    cout << "channel: " << endl;
+                    cin >> i;
+                } while (i >= PE_COUNT*2 || i < 0);
                 cout << "address: " << endl;
                 cin >> addr;
                 read_addr[i] = addr;
                 
-                dut.mem_read[i].notify();
+                dut.mem_read[i].notify(1, SC_NS);
                 cout << "notified." << endl << endl;
                 break;
             case 'w':  // write
-                cout << "idx: " << endl;
-                cin >> i;
+                do {
+                    cout << "channel: " << endl;
+                    cin >> i;
+                } while (i >= PE_COUNT || i < 0);
                 cout << "address: " << endl;
                 cin >> addr;
                 write_addr[i] = addr;
                 cout << "value: " << endl;
                 cin >> val;
-                write_value[i] = fiber_entry(5, val);
+                write_value[i].write(fiber_entry(5, val));
                 
-                dut.mem_write[i].notify();
+                dut.mem_write[i].notify(1, SC_NS);
                 cout << "notified." << endl << endl;
                 break;
             case 'n':  // next
-                cout << "\n\nnext cycle." << endl;
+                cout << "\nnext cycle." << endl;
                 wait();
-                // print if any events finished
-                for (int i = 0; i < PE_COUNT*2; i++) {
-                    if (dut.mem_read_done[i].triggered()) {
-                        dut.mem_read_done[i].cancel();
-                        cout << "mem read " << i << " done! ";
-                        cout << "Got " << read_value[i] << endl;
-                    }
-                }
-                for (int i = 0; i < PE_COUNT; i++) {
-                    if (dut.mem_write_done[i].triggered()) {
-                        dut.mem_write_done[i].cancel();
-                        cout << "mem write " << i << "done!" << endl;
-                    }
-                }
                 break;
         }
     }
 }
 
-//void Mem_TB::mem_port_1() {}
+void Mem_TB::mem_repl_callback_read() {
+    while (true) {
+        wait(read_any_done);
+        for (int i = 0; i < PE_COUNT*2; i++)
+            if (dut.mem_read_done[i].triggered())
+                cout << "mem read " << i << " done! "
+                << "Got " << read_value[i] << endl;
+    }
+}
+
+void Mem_TB::mem_repl_callback_write() {
+    while (true) {
+        wait(write_any_done);
+        for (int i = 0; i < PE_COUNT; i++)
+            if (dut.mem_write_done[i].triggered())
+                cout << "mem write " << i << " done!" << endl;
+    }
+}

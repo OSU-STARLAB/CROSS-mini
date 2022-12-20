@@ -5,62 +5,52 @@
 // immediately, but the calling thread is only notified of completion
 // after the MEMORY_*_LATENCY delay finishes.
 
-// Rather than using wait(LATENCY), I have counters defined as private
-// members. This allows for a fixed number of servicing functions (just
-// one for read and one for write) for a variable number of memory
-// channels. There might be a way to make a dynamic number of SC_THREADs
-// but I didn't pursue that method since this seemed more legible.
+void Mem::readyer() {
+    wait(2);
+    ready = 1;
+    while (true)
+        wait();
+}
 
 void Mem::read_listener() {
-    wait();
-    
     while (true) {
+        // check all events in parallel every cycle
+        MODULE_INFO("waiting!");
+        wait(mem_read_any);
+        MODULE_INFO("woken up!");
         // check if any events need to be serviced
         for (int i = 0; i < PE_COUNT*2; i++) {
-            MODULE_INFO("read " << i << " has delay " << read_delays[i]);
             // if this event is in progress
             if (mem_read[i].triggered()) {
                 // if it just started
-                if (read_delays[i] == 0) {
-                    MODULE_INFO("read started at " << i);
-                    uint mem_addr = read_addr[i].read();
-                    read_value[i].write(contents[mem_addr]);
-                    read_delays[i] = MEMORY_READ_LATENCY;
-                // decrement delay counter. If zero, finish up
-                } else if (--read_delays[i] == 0) {
-                    MODULE_INFO("read ended at " << i);
-                    mem_read[i].cancel();
-                    mem_read_done[i].notify();
-                } else
-                    MODULE_INFO("read decremented to " << read_delays[i]);
+                uint mem_addr = read_addr[i].read();
+                MODULE_INFO("read " << i << " triggered"
+                    << " at addr " << mem_addr
+                )
+                read_value[i] = contents[mem_addr];
+                mem_read_done[i].notify(MEMORY_READ_LATENCY, SC_NS);
             }
         }
-        // check all events in parallel every cycle
-        wait();
     }
 }
 
 void Mem::write_listener() {
-    wait();
-    
     while (true) {
+        // check all events in parallel every cycle
+        wait(mem_write_any);
         // check if any events need to be serviced
         for (int i = 0; i < PE_COUNT; i++) {
             // if this event is in progress
             if (mem_write[i].triggered()) {
                 // if it just started
-                if (write_delays[i] == 0) {
-                    uint mem_addr = write_addr[i].read();
-                    contents[mem_addr] = write_value[i];
-                    write_delays[i] = MEMORY_WRITE_LATENCY;
-                // decrement delay counter. If zero, finish up
-                } else if (--write_delays[i] == 0) {
-                    mem_write[i].cancel();
-                    mem_write_done[i].notify();
-                }
+                uint mem_addr = write_addr[i].read();
+                MODULE_INFO("write " << i << " triggered"
+                    << " at addr " << mem_addr
+                    << " with value " << write_value[i]
+                )
+                contents[mem_addr] = write_value[i];
+                mem_write_done[i].notify(MEMORY_WRITE_LATENCY, SC_NS);
             }
         }
-        // check all events in parallel every cycle
-        wait();
     }
 }

@@ -8,15 +8,18 @@ SC_MODULE(Mem) {
     // read ports: fetching fibers
     sc_vector<sc_in<pointer_type>> read_addr;
     sc_vector<sc_out<fiber_entry>> read_value;
+    sc_event_or_list mem_read_any;
     sc_vector<sc_event> mem_read;
     sc_vector<sc_event> mem_read_done;
     
     // write ports: storing results
     sc_vector<sc_in<pointer_type>> write_addr;
     sc_vector<sc_in<fiber_entry>> write_value;
+    sc_event_or_list mem_write_any;
     sc_vector<sc_event> mem_write;
     sc_vector<sc_event> mem_write_done;
     
+    void readyer();
     void read_listener();
     void write_listener();
     
@@ -31,10 +34,17 @@ SC_MODULE(Mem) {
         mem_write("mem_write", PE_COUNT),
         mem_write_done("mem_write_done", PE_COUNT),
         
-        contents(MEMORY_SIZE),
-        read_delays(PE_COUNT*2, 0),
-        write_delays(PE_COUNT*2, 0)
+        contents(MEMORY_SIZE)
     {
+        for (int i = 0; i < PE_COUNT*2; i++)
+            mem_read_any |= mem_read[i];
+        for (int i = 0; i < PE_COUNT; i++)
+            mem_write_any |= mem_write[i];
+            
+        SC_THREAD(readyer);
+        dont_initialize();
+        sensitive << clk.pos();
+        
         SC_THREAD(read_listener);
         sensitive << clk.pos();
         
@@ -43,8 +53,6 @@ SC_MODULE(Mem) {
     }
     
     private:
-        // actual memory contents. C++ vectors since it's for simulation
+        // actual memory contents. C++ vector since it's for simulation
         std::vector<sc_signal<fiber_entry>> contents;
-        std::vector<uint> read_delays;
-        std::vector<uint> write_delays;
 };
