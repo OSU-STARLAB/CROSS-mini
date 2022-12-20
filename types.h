@@ -37,3 +37,4 @@ struct fiber_entry {
     
     friend std::ostream & operator<< (std::ostream & os, const fiber_entry & ent);    
 };
+void sc_trace(sc_trace_file *&, const fiber_entry &, std::string &);

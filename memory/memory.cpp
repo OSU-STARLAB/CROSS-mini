@@ -17,18 +17,22 @@ void Mem::read_listener() {
     while (true) {
         // check if any events need to be serviced
         for (int i = 0; i < PE_COUNT*2; i++) {
+            MODULE_INFO("read " << i << " has delay " << read_delays[i]);
             // if this event is in progress
             if (mem_read[i].triggered()) {
                 // if it just started
                 if (read_delays[i] == 0) {
+                    MODULE_INFO("read started at " << i);
                     uint mem_addr = read_addr[i].read();
                     read_value[i].write(contents[mem_addr]);
                     read_delays[i] = MEMORY_READ_LATENCY;
                 // decrement delay counter. If zero, finish up
                 } else if (--read_delays[i] == 0) {
+                    MODULE_INFO("read ended at " << i);
                     mem_read[i].cancel();
                     mem_read_done[i].notify();
-                }
+                } else
+                    MODULE_INFO("read decremented to " << read_delays[i]);
             }
         }
         // check all events in parallel every cycle
