@@ -32,7 +32,7 @@ SC_MODULE(Mem_TB) {
         dut.ready(ready);
         
         SC_THREAD(mem_repl);
-        sensitive << clk.posedge_event();
+        //sensitive << clk.posedge_event();
         
         SC_THREAD(mem_repl_callback_read);
         SC_THREAD(mem_repl_callback_write);
@@ -78,17 +78,7 @@ int sc_main( int argc, char* argv[] ) {
 }
 
 void Mem_TB::mem_repl() {
-    MODULE_INFO("entering mem tb thread");
-    rst = 0;
-    wait();
-    MODULE_INFO("wait 1");
-    rst = 1;
-    wait();
-    MODULE_INFO("wait 2");
-    rst = 0;
-    wait();
-    MODULE_INFO("entering mem tb main loop");
-    
+    wait(ready.posedge_event());
     // repl
     char cmd;
     uint i;
@@ -127,7 +117,7 @@ void Mem_TB::mem_repl() {
                 break;
             case 'n':  // next
                 cout << "\nnext cycle." << endl;
-                wait();
+                wait(1, SC_NS);
                 break;
         }
     }
