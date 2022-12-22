@@ -77,8 +77,15 @@ std::tuple<pointer_type,pointer_type> Mem::append_fiber(std::string filename) {
         entry = fiber_entry(idx, val);
         
         contents[append_idx++] = entry;
-        cout << "appended " << contents[append_idx-1] << endl;
+        //cout << "appended " << contents[append_idx-1] << endl;
     }
     in.close();
     return std::tuple<pointer_type,pointer_type>(start_idx,append_idx-1);
+}
+
+void Mem::print_region(pointer_type start, pointer_type end) {
+    cout << "Mem:" << endl;
+    for (pointer_type i = start; i <= end; i++) {
+        cout << "  [" << i << "] = " << contents[i] << endl;
+    }
 }

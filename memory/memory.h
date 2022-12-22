@@ -25,6 +25,7 @@ SC_MODULE(Mem) {
     
     // simulation-only helper functions
     std::tuple<pointer_type,pointer_type> append_fiber(std::string filename);  // returns pointer to start
+    void print_region(pointer_type start, pointer_type end);
     
     SC_CTOR(Mem) :
         clk("clk"),
