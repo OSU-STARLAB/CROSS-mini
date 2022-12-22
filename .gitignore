@@ -1,4 +1,6 @@
-sim
+tb_control
+tb_mem
+tb_pe
 *.log
 *.o
 a.out
