@@ -15,18 +15,18 @@ SC_MODULE(PE_TB) {
     
     // memory unit
     sc_signal<bool> mem_ready;
-    sc_signal<pointer_type> mem_read_address_a;
+    sc_signal<pointer_type> & mem_read_address_a;
     sc_signal<fiber_entry> mem_res_value_a;  // data that's fetched
     sc_event mem_read_a;  // we tell mem to read
     sc_event mem_done_a;  // mem tells us it's done
     
-    sc_signal<pointer_type> mem_read_address_b;
+    sc_signal<pointer_type> & mem_read_address_b;
     sc_signal<fiber_entry> mem_res_value_b;
     sc_event mem_read_b;
     sc_event mem_done_b;
     
-    sc_signal<pointer_type> mem_write_address_c;
-    sc_signal<fiber_entry> mem_write_value_c;
+    sc_signal<pointer_type> & mem_write_address_c;
+    sc_signal<fiber_entry> & mem_write_value_c;
     sc_event mem_write_c;
     sc_event mem_done_c;
     
@@ -41,6 +41,10 @@ SC_MODULE(PE_TB) {
             mem_read_a, mem_done_a,
             mem_read_b, mem_done_b,
             mem_write_c, mem_done_c),
+        mem_read_address_a(dut.mem_read_address_a),
+        mem_read_address_b(dut.mem_read_address_b),
+        mem_write_address_c(dut.mem_write_address_c),
+        mem_write_value_c(dut.mem_write_value_c),
         clk("clk_sig", 1, SC_NS)
     {
         dut.clk(clk);
@@ -53,14 +57,8 @@ SC_MODULE(PE_TB) {
         dut.destination(destination);
         
         dut.mem_ready(mem_ready);
-        dut.mem_read_address_a(mem_read_address_a);
-        dut.mem_res_value_a(mem_res_value_a);
-        
-        dut.mem_read_address_b(mem_read_address_b);
+        dut.mem_res_value_a(mem_res_value_a);        
         dut.mem_res_value_b(mem_res_value_b);
-        
-        dut.mem_write_address_c(mem_write_address_c);
-        dut.mem_write_value_c(mem_write_value_c);
         
         SC_THREAD(control);
         sensitive << clk.posedge_event();

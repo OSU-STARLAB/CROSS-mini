@@ -49,12 +49,18 @@ SC_MODULE(PE) {
     ) :
         job_start(job_start),
         job_done(job_done),
+        mem_read_address_a(fetch_a.mem_read_address),
         mem_read_a(mem_read_a),
         mem_done_a(mem_done_a),
+        mem_read_address_b(fetch_b.mem_read_address),
         mem_read_b(mem_read_b),
         mem_done_b(mem_done_b),
+        mem_write_address_c(store.mem_write_address),
+        mem_write_value_c(store.mem_write_value),
         mem_write_c(mem_write_c),
         mem_done_c(mem_done_c),
+        fetch_a_done(fetch_a.done),
+        fetch_b_done(fetch_b.done),
         fetch_a("fetch_a", job_start, job_done, mem_read_a, mem_done_a),
         fetch_b("fetch_b", job_start, job_done, mem_read_b, mem_done_b),
         fiber_a("fiber_a", INTERSECTION_FIFO_SIZE),
@@ -63,13 +69,7 @@ SC_MODULE(PE) {
         result_values("res_vals", INTERSECTION_FIFO_SIZE),
         result_indices("res_idxs", INTERSECTION_FIFO_SIZE),
         result_combined("res_comb", 1),
-        store("store", mem_write_c, mem_done_c),
-        mem_read_address_a(fetch_a.mem_read_address),
-        mem_read_address_b(fetch_b.mem_read_address),
-        mem_write_address_c(store.mem_write_address),
-        mem_write_value_c(store.mem_write_value),
-        fetch_a_done(fetch_a.done),
-        fetch_b_done(fetch_b.done)
+        store("store", mem_write_c, mem_done_c)
     {
         // clock and reset
         fetch_a.clk(clk); fetch_a.rst(rst);
