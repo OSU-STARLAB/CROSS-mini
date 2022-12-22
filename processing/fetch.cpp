@@ -36,7 +36,6 @@ void Fetch::fetch_main() {
             // send element to intersection unit
             fiber_out.write(mem_res_value);
         }
-        job_done.notify();
         done = 1;
         MODULE_INFO("finished job");
     }

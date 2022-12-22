@@ -8,7 +8,9 @@ void Store::store_main() {
         mem_write_address = destination.read();
         
         do wait(); while (!mem_ready);  // ensure at least one cycle
+        MODULE_INFO("notifying");
         mem_write.notify();  // tell mem to do the thing
         wait(mem_done);  // block until mem finishes
+        MODULE_INFO("done waiting");
     }
 }

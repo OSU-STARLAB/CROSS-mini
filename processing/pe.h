@@ -40,6 +40,7 @@ SC_MODULE(PE) {
     
     void pe_destination_fifo();
     void pe_result_combiner();
+    void job_done_notifier();
     
     SC_HAS_PROCESS(PE);
     PE (sc_module_name name, sc_event & job_start, sc_event & job_done,
@@ -57,12 +58,12 @@ SC_MODULE(PE) {
         mem_done_b(mem_done_b),
         mem_write_address_c(store.mem_write_address),
         mem_write_value_c(store.mem_write_value),
-        mem_write_c(mem_write_c),
+        mem_write_c(store.mem_write),
         mem_done_c(mem_done_c),
         fetch_a_done(fetch_a.done),
         fetch_b_done(fetch_b.done),
-        fetch_a("fetch_a", job_start, job_done, mem_read_a, mem_done_a),
-        fetch_b("fetch_b", job_start, job_done, mem_read_b, mem_done_b),
+        fetch_a("fetch_a", job_start, mem_read_a, mem_done_a),
+        fetch_b("fetch_b", job_start, mem_read_b, mem_done_b),
         fiber_a("fiber_a", INTERSECTION_FIFO_SIZE),
         fiber_b("fiber_b", INTERSECTION_FIFO_SIZE),
         ixn("ixn"),
@@ -105,6 +106,7 @@ SC_MODULE(PE) {
         // This thread queues them up.
         SC_THREAD(pe_destination_fifo);
         SC_THREAD(pe_result_combiner);
+        SC_THREAD(job_done_notifier);
     }
     
     private:

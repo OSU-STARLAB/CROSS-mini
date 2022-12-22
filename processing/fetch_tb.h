@@ -15,7 +15,6 @@ SC_MODULE(Fetch_TB) {
     // memory unit interface
     //     request
     sc_signal<bool> mem_ready;
-    sc_signal<pointer_type> mem_read_address;
     sc_event mem_read;
     //     response
     sc_signal<fiber_entry> mem_res_value;
@@ -23,7 +22,6 @@ SC_MODULE(Fetch_TB) {
     
     // intersection unit interface
     sc_fifo<fiber_entry> fiber;
-    sc_event job_done;
     
     void control_source();
     void memory_source();
@@ -34,7 +32,7 @@ SC_MODULE(Fetch_TB) {
     
     SC_HAS_PROCESS(Fetch_TB);
     Fetch_TB(sc_module_name name, std::string inputs, std::string outputs) :
-        dut("dut", job_start, job_done, mem_read, mem_done),
+        dut("dut", job_start, mem_read, mem_done),
         clk("clk_sig", 1, SC_NS)
     {
         in.open(inputs);
@@ -58,7 +56,6 @@ SC_MODULE(Fetch_TB) {
         
         // mem
         dut.mem_ready(mem_ready);
-        dut.mem_read_address(mem_read_address);
         dut.mem_res_value(mem_res_value);
         
         

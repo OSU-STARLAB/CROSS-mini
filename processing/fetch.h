@@ -21,19 +21,17 @@ SC_MODULE(Fetch) {
     
     // connection with intersection (ixn) unit
     sc_fifo_out<fiber_entry> fiber_out;
-    sc_event & job_done;
     sc_signal<bool> done;
     
     void fetch_main();
     
     SC_HAS_PROCESS(Fetch);
-    Fetch(sc_module_name name, sc_event & job_start, sc_event & job_done,
+    Fetch(sc_module_name name, sc_event & job_start,
         sc_event & mem_read, sc_event & mem_done
     ) :
         job_start(job_start),
         mem_read(mem_read),
-        mem_done(mem_done),
-        job_done(job_done)
+        mem_done(mem_done)
     {
         SC_THREAD(fetch_main);
         reset_signal_is(rst, true);

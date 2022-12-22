@@ -27,7 +27,7 @@ void Fetch_TB::control_source() {
         wait();
         dut.job_start.notify();
         
-        wait(job_done);
+        wait(dut.done.posedge_event());
     }
     MODULE_INFO("source done");
 }
@@ -40,7 +40,7 @@ void Fetch_TB::memory_source() {
         wait(mem_read);
         
         mem_ready = false;
-        pointer_type ptr = mem_read_address;
+        pointer_type ptr = dut.mem_read_address;
         tensor_element value = ptr * 3;
         count_type index = ptr * 2;
         wait();
