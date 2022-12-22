@@ -23,6 +23,9 @@ SC_MODULE(Mem) {
     void read_listener();
     void write_listener();
     
+    // simulation-only helper functions
+    std::tuple<pointer_type,pointer_type> append_fiber(std::string filename);  // returns pointer to start
+    
     SC_CTOR(Mem) :
         clk("clk"),
         ready("ready"),
@@ -57,4 +60,6 @@ SC_MODULE(Mem) {
     private:
         // actual memory contents. C++ vector since it's for simulation
         std::vector<sc_signal<fiber_entry>> contents;
+        
+        pointer_type append_idx;
 };
