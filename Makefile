@@ -26,3 +26,6 @@ types.o: types.cpp types.h defines.h
 
 mem: memory_tb.o memory.o types.o
 	g++ ${FLAGS} memory_tb.o memory.o types.o ${LIBS}
+
+bench: memory/* processing/* control/* types.cpp types.h defines.h
+	g++ -o bench ${LIBS} ${flags} types.cpp control/control_tb.cpp memory/memory.cpp processing/fetch.cpp processing/intersection.cpp processing/pe.cpp processing/store.cpp

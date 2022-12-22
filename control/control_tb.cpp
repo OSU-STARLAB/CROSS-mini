@@ -1,36 +1,80 @@
-#include <string>
 #include <systemc>
 #include "../memory/memory.h"
 #include "../processing/pe.h"
 
 SC_MODULE(Control_TB) {
     Mem mem;
-    std::vector<PE> pes;
+    std::vector<PE*> pes;
+    
+    // take PE output and combine with result index before storing
     
     SC_CTOR(Control_TB) :
         mem("mem"),
         clk("clk_sig", 1, SC_NS),
-        rst("rst")
+        rst("rst"),
+        jobs_start("jobs_start", PE_COUNT),
+        jobs_done("jobs_done", PE_COUNT),
+        fiber_a_starts("fa_starts", PE_COUNT),
+        fiber_a_ends("fa_ends", PE_COUNT),
+        fiber_b_starts("fb_starts", PE_COUNT),
+        fiber_b_ends("fb_ends", PE_COUNT),
+        destinations("destinations", PE_COUNT)
     {
         mem.clk(clk);
         
         for (int i = 0; i < PE_COUNT; i++) {
             std::string name = "pe";
             name.append(std::to_string(i));
-            PE new_pe = new PE(name.c_str(),
-                NULL, NULL,  // need job events
+            PE * new_pe = new PE(name.c_str(),
+                jobs_start[i], jobs_done[i],  // need job events
                 mem.mem_read[i], mem.mem_read_done[i],
                 mem.mem_read[i+PE_COUNT], mem.mem_read_done[i+PE_COUNT],
-                mem.mem_write[i], mem.mem_write_done[i]);
-            new_pe.clk(clk);
-            new_pe.rst(rst);
-            // connect job signals
+                mem.mem_write[i], mem.mem_write_done[i]
+            );
             pes.push_back(new_pe);
+            new_pe->clk(clk);
+            new_pe->rst(rst);
+            
+            new_pe->fiber_a_start(fiber_a_starts[i]);
+            new_pe->fiber_a_end(fiber_a_ends[i]);
+            new_pe->fiber_b_start(fiber_b_starts[i]);
+            new_pe->fiber_b_end(fiber_b_ends[i]);
+            new_pe->destination(destinations[i]);            
+            
+            new_pe->mem_ready(mem.ready);
+            mem.read_addr[i](new_pe->mem_read_address_a);
+            mem.read_addr[i+PE_COUNT](new_pe->mem_read_address_b);
+            new_pe->mem_res_value_a(mem.read_value[i]);
+            new_pe->mem_res_value_b(mem.read_value[i+PE_COUNT]);
+            mem.write_addr[i](new_pe->mem_write_address_c);
+            
+            cout << mem.write_value[i].bind_count();
+            cout << new_pe->mem_write_value_c.bind_count() << ", ";
+            mem.write_value[i](new_pe->mem_write_value_c);
+            cout << mem.write_value[i].bind_count();
+            cout << new_pe->mem_write_value_c.bind_count() << endl;
         }
+    }
+    
+    ~Control_TB() {
+        // not totally sure if this will destruct correctly
+        pes.clear();
     }
     
     private:
         sc_clock clk;
         sc_signal<bool> rst;
-        // define job signals
+        sc_vector<sc_event> jobs_start;
+        sc_vector<sc_event> jobs_done;
+        sc_vector<sc_signal<pointer_type>> fiber_a_starts;
+        sc_vector<sc_signal<pointer_type>> fiber_a_ends;
+        sc_vector<sc_signal<pointer_type>> fiber_b_starts;
+        sc_vector<sc_signal<pointer_type>> fiber_b_ends;
+        sc_vector<sc_signal<pointer_type>> destinations;
 };
+
+int sc_main(int argc, char * argv[]) {
+    Control_TB * tb = new Control_TB("tb");
+    sc_start(100, SC_NS);
+    return 0;
+}
