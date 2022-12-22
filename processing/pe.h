@@ -31,7 +31,7 @@ SC_MODULE(PE) {
     sc_event & mem_done_b;
     
     sc_out<pointer_type> mem_write_address_c;
-    sc_out<tensor_element> mem_write_value_c;
+    sc_out<fiber_entry> mem_write_value_c;
     sc_event & mem_write_c;
     sc_event & mem_done_c;
     
@@ -39,6 +39,7 @@ SC_MODULE(PE) {
     sc_signal<bool> fetch_b_done;
     
     void pe_destination_fifo();
+    void pe_result_combiner();
     
     SC_HAS_PROCESS(PE);
     PE (sc_module_name name, sc_event & job_start, sc_event & job_done,
@@ -56,11 +57,17 @@ SC_MODULE(PE) {
         mem_done_c(mem_done_c),
         fetch_a("fetch_a", job_start, job_done, mem_read_a, mem_done_a),
         fetch_b("fetch_b", job_start, job_done, mem_read_b, mem_done_b),
-        fiber_a(INTERSECTION_FIFO_SIZE),
-        fiber_b(INTERSECTION_FIFO_SIZE),
+        fiber_a("fiber_a", INTERSECTION_FIFO_SIZE),
+        fiber_b("fiber_b", INTERSECTION_FIFO_SIZE),
         ixn("ixn"),
-        results(INTERSECTION_FIFO_SIZE),
-        store("store", mem_write_c, mem_done_c)
+        result_values("res_vals", INTERSECTION_FIFO_SIZE),
+        result_indices("res_idxs", INTERSECTION_FIFO_SIZE),
+        result_combined("res_comb", 1),
+        store("store", mem_write_c, mem_done_c),
+        mem_read_address_a("mraa"),
+        mem_read_address_b("mrab"),
+        mem_write_address_c("mwac"),
+        mem_write_value_c("mwvc")
     {
         // clock and reset
         fetch_a.clk(clk); fetch_a.rst(rst);
@@ -73,8 +80,8 @@ SC_MODULE(PE) {
         fetch_b.fiber_out(fiber_b);
         ixn.fiber_a(fiber_a);
         ixn.fiber_b(fiber_b);
-        ixn.results(results);
-        store.results(results);
+        ixn.results(result_values);
+        store.results(result_combined);
         
         // control connections
         fetch_a.start_addr(fiber_a_start);
@@ -101,14 +108,16 @@ SC_MODULE(PE) {
         // internally there's a FIFO but externally it's a signal.
         // This thread queues them up.
         SC_THREAD(pe_destination_fifo);
-        sensitive << clk;
+        SC_THREAD(pe_result_combiner);
     }
     
     private:
         Fetch fetch_a, fetch_b;
         sc_fifo<fiber_entry> fiber_a, fiber_b;
         Intersection ixn;
-        sc_fifo<tensor_element> results;
+        sc_fifo<tensor_element> result_values;
+        sc_fifo<count_type> result_indices;
+        sc_fifo<fiber_entry> result_combined;
         Store store;
         sc_fifo<pointer_type> destinations;
 };

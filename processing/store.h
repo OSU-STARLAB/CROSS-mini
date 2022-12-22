@@ -9,13 +9,13 @@ SC_MODULE(Store) {
     sc_fifo_in<pointer_type> destination;
     
     // connection with intersection unit
-    sc_fifo_in<tensor_element> results;
+    sc_fifo_in<fiber_entry> results;
     
     // connection with memory unit
     //     request
     sc_in<bool> mem_ready;
     sc_out<pointer_type> mem_write_address;
-    sc_out<tensor_element> mem_write_value;
+    sc_out<fiber_entry> mem_write_value;
     sc_event & mem_write;
     //     response
     sc_event & mem_done;

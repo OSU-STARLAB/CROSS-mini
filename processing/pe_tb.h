@@ -26,7 +26,7 @@ SC_MODULE(PE_TB) {
     sc_event mem_done_b;
     
     sc_signal<pointer_type> mem_write_address_c;
-    sc_signal<tensor_element> mem_write_value_c;
+    sc_signal<fiber_entry> mem_write_value_c;
     sc_event mem_write_c;
     sc_event mem_done_c;
     

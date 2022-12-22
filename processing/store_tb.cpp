@@ -7,19 +7,19 @@ void Store_TB::control_ixn_source() {
     wait();
     
     destination.write(30);
-    results.write(58);
+    results.write(fiber_entry(1, 58));
     wait();
     
     destination.write(10);
-    results.write(98);
+    results.write(fiber_entry(4,98));
     wait();
     
     destination.write(50);
-    results.write(-723);
+    results.write(fiber_entry(6,-723));
     wait();
     
     destination.write(40);
-    results.write(9);
+    results.write(fiber_entry(9,9));
 }
 
 void Store_TB::memory_iface() {
@@ -31,7 +31,7 @@ void Store_TB::memory_iface() {
         wait(mem_write);
         mem_ready = 0;
         pointer_type address = mem_write_address;
-        tensor_element value = mem_write_value;
+        fiber_entry value = mem_write_value;
         MODULE_INFO("Writing " << value << " at " << address);
         wait(3);
         mem_ready = 1;

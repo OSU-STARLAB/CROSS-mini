@@ -10,12 +10,12 @@ SC_MODULE(Store_TB) {
     // connection with memory
     sc_signal<bool> mem_ready;
     sc_signal<pointer_type> mem_write_address;
-    sc_signal<tensor_element> mem_write_value;
+    sc_signal<fiber_entry> mem_write_value;
     sc_event mem_write;
     sc_event mem_done;
     
     // connection with intersection unit
-    sc_fifo<tensor_element> results;
+    sc_fifo<fiber_entry> results;
     
     void control_ixn_source();
     void memory_iface();
