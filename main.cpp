@@ -2,8 +2,8 @@
 //#include "processing/intersection_tb.h"
 //#include "processing/fetch_tb.h"
 //#include "processing/store_tb.h"
-//#include "processing/pe_tb.h"
-#include "memory/memory_tb.h"
+#include "processing/pe_tb.h"
+
 
 int sc_main( int argc, char* argv[] ) {
 	sc_report_handler::set_log_file_name("report.log");
@@ -24,8 +24,8 @@ int sc_main( int argc, char* argv[] ) {
 	//Fetch_TB * tb = new Fetch_TB("tb", "test_inputs/fetch_ranges.csv", "test_outputs/addresses.log");
 	
 	//Store_TB * tb = new Store_TB("tb");
-	//PE_TB * tb = new PE_TB("tb");
-	Mem_TB * tb = new Mem_TB("tb");
+	PE_TB * tb = new PE_TB("tb");
+	//Mem_TB * tb = new Mem_TB("tb");
 	
 	SC_REPORT_INFO("main", "simulation starts");
 	sc_start(100, SC_NS);
