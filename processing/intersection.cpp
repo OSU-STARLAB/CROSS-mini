@@ -77,7 +77,7 @@ void Intersection::intersection_main() {
                 }
 
                 if (!just_read) {
-                    MODULE_INFO("waiting for either fiber");
+                    //MODULE_INFO("waiting for either fiber");
                     wait();
                 }
             } while (!just_read);
