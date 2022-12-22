@@ -16,7 +16,7 @@
 #define MODULE_REPORT(report_fn, report_content) \
 { \
     std::stringstream _temp_ss; \
-    _temp_ss << report_content; \
+    _temp_ss << sc_time_stamp() << " " << report_content; \
     report_fn(name(), _temp_ss.str().c_str()); \
 }
 
