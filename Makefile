@@ -4,7 +4,7 @@ CC = g++ -Wall -g
 LD_COMBINE = ld -r
 
 # Executables
-tb_control: ${COMMON_DEPS} control/control_tb.cpp memory.o pe.o
+tb_control: ${COMMON_DEPS} types.o control/control_tb.cpp memory.o pe.o
 	${CC} -o tb_control ${LIBS} control/control_tb.cpp memory.o pe.o types.o
 
 tb_mem: ${COMMON_DEPS} main.cpp memory/memory_tb.cpp memory.o types.o
