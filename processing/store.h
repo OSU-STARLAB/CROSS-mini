@@ -14,8 +14,8 @@ SC_MODULE(Store) {
     // connection with memory unit
     //     request
     sc_in<bool> mem_ready;
-    sc_out<pointer_type> mem_write_address;
-    sc_out<fiber_entry> mem_write_value;
+    sc_signal<pointer_type> mem_write_address;
+    sc_signal<fiber_entry> mem_write_value;
     sc_event & mem_write;
     //     response
     sc_event & mem_done;

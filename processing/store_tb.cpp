@@ -30,8 +30,8 @@ void Store_TB::memory_iface() {
     while (true) {
         wait(mem_write);
         mem_ready = 0;
-        pointer_type address = mem_write_address;
-        fiber_entry value = mem_write_value;
+        pointer_type address = dut.mem_write_address;
+        fiber_entry value = dut.mem_write_value;
         MODULE_INFO("Writing " << value << " at " << address);
         wait(3);
         mem_ready = 1;

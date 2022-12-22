@@ -19,7 +19,7 @@ SC_MODULE(Mem_TB) {
     {
         for (int i = 0; i < PE_COUNT*2; i++) {
             dut.read_addr[i](read_addr[i]);
-            dut.read_value[i](read_value[i]);
+            read_value[i](dut.read_value[i]);
             read_any_done |= dut.mem_read_done[i];
         }
         for (int i = 0; i < PE_COUNT; i++) {
@@ -29,7 +29,6 @@ SC_MODULE(Mem_TB) {
         }
         
         dut.clk(clk);
-        dut.ready(ready);
         
         SC_THREAD(mem_repl);
         //sensitive << clk.posedge_event();
@@ -45,10 +44,10 @@ SC_MODULE(Mem_TB) {
     
     private:
         sc_clock clk;
-        sc_signal<bool> rst, ready;
+        sc_signal<bool> rst;
         // read ports: fetching fibers
         sc_vector<sc_signal<pointer_type>> read_addr;
-        sc_vector<sc_signal<fiber_entry>> read_value;
+        sc_vector<sc_in<fiber_entry>> read_value;
         
         // write ports: storing results
         sc_vector<sc_signal<pointer_type>> write_addr;
@@ -78,7 +77,7 @@ int sc_main( int argc, char* argv[] ) {
 }
 
 void Mem_TB::mem_repl() {
-    wait(ready.posedge_event());
+    wait(dut.ready.posedge_event());
     // repl
     char cmd;
     uint i;

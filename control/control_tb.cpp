@@ -42,17 +42,16 @@ SC_MODULE(Control_TB) {
             new_pe->destination(destinations[i]);            
             
             new_pe->mem_ready(mem.ready);
+            
             mem.read_addr[i](new_pe->mem_read_address_a);
+            
             mem.read_addr[i+PE_COUNT](new_pe->mem_read_address_b);
+            
             new_pe->mem_res_value_a(mem.read_value[i]);
             new_pe->mem_res_value_b(mem.read_value[i+PE_COUNT]);
-            mem.write_addr[i](new_pe->mem_write_address_c);
             
-            cout << mem.write_value[i].bind_count();
-            cout << new_pe->mem_write_value_c.bind_count() << ", ";
+            mem.write_addr[i](new_pe->mem_write_address_c);
             mem.write_value[i](new_pe->mem_write_value_c);
-            cout << mem.write_value[i].bind_count();
-            cout << new_pe->mem_write_value_c.bind_count() << endl;
         }
     }
     

@@ -13,7 +13,7 @@ SC_MODULE(Fetch) {
     // connection with memory unit
     //     request
     sc_in<bool> mem_ready;
-    sc_out<pointer_type> mem_read_address;
+    sc_signal<pointer_type> mem_read_address;
     sc_event & mem_read;  // tell mem to read addr
     //     response
     sc_in<fiber_entry> mem_res_value;
@@ -22,7 +22,7 @@ SC_MODULE(Fetch) {
     // connection with intersection (ixn) unit
     sc_fifo_out<fiber_entry> fiber_out;
     sc_event & job_done;
-    sc_out<bool> done;
+    sc_signal<bool> done;
     
     void fetch_main();
     

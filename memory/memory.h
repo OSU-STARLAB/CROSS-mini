@@ -3,11 +3,11 @@
 
 SC_MODULE(Mem) {
     sc_in<bool> clk;
-    sc_out<bool> ready;
+    sc_signal<bool> ready;
     
     // read ports: fetching fibers
     sc_vector<sc_in<pointer_type>> read_addr;
-    sc_vector<sc_out<fiber_entry>> read_value;
+    sc_vector<sc_signal<fiber_entry>> read_value;
     sc_event_or_list mem_read_any;
     sc_vector<sc_event> mem_read;
     sc_vector<sc_event> mem_read_done;
@@ -24,6 +24,8 @@ SC_MODULE(Mem) {
     void write_listener();
     
     SC_CTOR(Mem) :
+        clk("clk"),
+        ready("ready"),
         read_addr("read_addr", PE_COUNT*2),
         read_value("read_value", PE_COUNT*2),
         mem_read("mem_read", PE_COUNT*2),

@@ -9,8 +9,6 @@ SC_MODULE(Store_TB) {
     
     // connection with memory
     sc_signal<bool> mem_ready;
-    sc_signal<pointer_type> mem_write_address;
-    sc_signal<fiber_entry> mem_write_value;
     sc_event mem_write;
     sc_event mem_done;
     
@@ -34,8 +32,6 @@ SC_MODULE(Store_TB) {
         dut.results(results);
         
         dut.mem_ready(mem_ready);
-        dut.mem_write_address(mem_write_address);
-        dut.mem_write_value(mem_write_value);
         
         SC_THREAD(control_ixn_source);
         sensitive << clk.posedge_event();

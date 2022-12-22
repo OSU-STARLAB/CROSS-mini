@@ -20,23 +20,23 @@ SC_MODULE(PE) {
     
     // connections with memory unit
     sc_in<bool> mem_ready;
-    sc_out<pointer_type> mem_read_address_a;
+    sc_signal<pointer_type> & mem_read_address_a;
     sc_in<fiber_entry> mem_res_value_a;  // data that's fetched
     sc_event & mem_read_a;  // we tell mem to read
     sc_event & mem_done_a;  // mem tells us it's done
     
-    sc_out<pointer_type> mem_read_address_b;
+    sc_signal<pointer_type> & mem_read_address_b;
     sc_in<fiber_entry> mem_res_value_b;
     sc_event & mem_read_b;
     sc_event & mem_done_b;
     
-    sc_out<pointer_type> mem_write_address_c;
-    sc_out<fiber_entry> mem_write_value_c;
+    sc_signal<pointer_type> & mem_write_address_c;
+    sc_signal<fiber_entry> & mem_write_value_c;
     sc_event & mem_write_c;
     sc_event & mem_done_c;
     
-    sc_signal<bool> fetch_a_done;
-    sc_signal<bool> fetch_b_done;
+    sc_signal<bool> & fetch_a_done;
+    sc_signal<bool> & fetch_b_done;
     
     void pe_destination_fifo();
     void pe_result_combiner();
@@ -64,10 +64,12 @@ SC_MODULE(PE) {
         result_indices("res_idxs", INTERSECTION_FIFO_SIZE),
         result_combined("res_comb", 1),
         store("store", mem_write_c, mem_done_c),
-        mem_read_address_a("mraa"),
-        mem_read_address_b("mrab"),
-        mem_write_address_c("mwac"),
-        mem_write_value_c("mwvc")
+        mem_read_address_a(fetch_a.mem_read_address),
+        mem_read_address_b(fetch_b.mem_read_address),
+        mem_write_address_c(store.mem_write_address),
+        mem_write_value_c(store.mem_write_value),
+        fetch_a_done(fetch_a.done),
+        fetch_b_done(fetch_b.done)
     {
         // clock and reset
         fetch_a.clk(clk); fetch_a.rst(rst);
@@ -88,22 +90,16 @@ SC_MODULE(PE) {
         fetch_a.end_addr(fiber_a_end);
         fetch_b.start_addr(fiber_b_start);
         fetch_b.end_addr(fiber_b_end);
-        fetch_a.done(fetch_a_done);
-        fetch_b.done(fetch_b_done);
         ixn.done_a(fetch_a_done);
         ixn.done_b(fetch_b_done);
         store.destination(destinations);
         
         // memory connections
         fetch_a.mem_ready(mem_ready),
-        fetch_a.mem_read_address(mem_read_address_a);
         fetch_a.mem_res_value(mem_res_value_a);
         fetch_b.mem_ready(mem_ready),
-        fetch_b.mem_read_address(mem_read_address_b);
         fetch_b.mem_res_value(mem_res_value_b);
         store.mem_ready(mem_ready);
-        store.mem_write_address(mem_write_address_c);
-        store.mem_write_value(mem_write_value_c);
         
         // internally there's a FIFO but externally it's a signal.
         // This thread queues them up.
