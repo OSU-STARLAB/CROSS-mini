@@ -76,7 +76,7 @@ SC_MODULE(Control_TB) {
 
 int sc_main(int argc, char * argv[]) {
     Control_TB * tb = new Control_TB("tb");
-    sc_start(100, SC_NS);
+    sc_start(1000000, SC_NS);
     cout << "Simulation finished after " << sc_time_stamp() << endl;
     delete tb;
     return 0;
@@ -86,9 +86,9 @@ void Control_TB::tb_main() {
     // init phase: load up memory
     pointer_type fiber_start_a, fiber_end_a;
     pointer_type fiber_start_b, fiber_end_b;
-    std::tie(fiber_start_a,fiber_end_a) = mem.append_fiber("test_inputs/fiber_a.csf");
+    std::tie(fiber_start_a,fiber_end_a) = mem.append_fiber("test_inputs/fiber_long_a.csf");
     cout << "start " << fiber_start_a << " end " << fiber_end_a << endl;
-    std::tie(fiber_start_b,fiber_end_b) = mem.append_fiber("test_inputs/fiber_b.csf");
+    std::tie(fiber_start_b,fiber_end_b) = mem.append_fiber("test_inputs/fiber_long_b.csf");
     cout << "start " << fiber_start_b << " end " << fiber_end_b << endl;
     
     wait(1, SC_NS);  // end init
