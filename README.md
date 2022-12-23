@@ -4,10 +4,10 @@ A mini proof-of-concept high-dimensional sparse tensor contraction accelerator i
 
 ## Building
 
-Just run `make`. Requires `g++` and the `systemc` library.
+Just run `make` for the default target (`tb_control`). Requires `g++` and the `systemc` library.
 
 ## Running
 
-Either execute `make test` or manually invoke `./sim`.
-If there are any messages logged during execution, they will appear in `report.log`.
-Test benches should be written to read in test data from `test_inputs` and write test results into `test_outputs`.
+Manually invoke `./tb_control` after you run `make`.
+Test inputs will be read from `test_inputs`.
+The simulation will log lots of messages to the screen.
