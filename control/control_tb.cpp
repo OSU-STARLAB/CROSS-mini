@@ -108,4 +108,5 @@ void Control_TB::tb_main() {
     
     wait(jobs_done[0]);
     mem.print_region(fiber_start_a, fiber_end_b + PE_COUNT + 2);
+    sc_stop();
 }
