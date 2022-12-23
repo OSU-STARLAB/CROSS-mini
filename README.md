@@ -2,6 +2,8 @@
 
 A mini proof-of-concept high-dimensional sparse tensor contraction accelerator in SystemC.
 
+![arch](doc/architecture.png)
+
 ## Building
 
 Just run `make` for the default target (`tb_control`). Requires `g++` and the `systemc` library.
