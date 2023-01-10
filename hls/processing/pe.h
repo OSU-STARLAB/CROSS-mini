@@ -1,5 +1,5 @@
 #include <systemc>
-#include "../defines.h"
+#include "../spec/spec.h"
 
 #include "fetch.h"
 #include "intersection.h"

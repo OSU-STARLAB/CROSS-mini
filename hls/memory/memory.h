@@ -1,5 +1,5 @@
 #include <systemc>
-#include "../defines.h"
+#include "../spec/spec.h"
 
 SC_MODULE(Mem) {
     sc_in<bool> clk;

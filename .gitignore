@@ -4,3 +4,4 @@ tb_pe
 *.log
 *.o
 a.out
+build

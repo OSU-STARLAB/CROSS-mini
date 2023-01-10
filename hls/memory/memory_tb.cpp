@@ -1,6 +1,6 @@
 #include <systemc.h>
 #include "memory.h"
-#include "../defines.h"
+#include "../spec/spec.h"
 
 SC_MODULE(Mem_TB) {
     Mem dut;
