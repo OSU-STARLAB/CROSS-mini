@@ -1,7 +1,29 @@
+#include <systemc.h>
 #include "fetch_tb.h"
 #include <cstddef>
 #include <sstream>
 #include <string>
+
+
+int sc_main( int argc, char* argv[] ) {
+	sc_report_handler::set_log_file_name("report.log");
+	
+	// ignore everything below this
+	sc_report_handler::set_verbosity_level(SC_DEBUG);
+	
+	// do not print, only log. Default is: SC_LOG | SC_DISPLAY
+	sc_report_handler::set_actions("tb.dut", SC_INFO, SC_LOG);
+	sc_report_handler::set_actions("tb", SC_INFO, SC_LOG);
+	
+	Fetch_TB * tb = new Fetch_TB("tb", "test_inputs/fetch_ranges.csv", "test_outputs/addresses.log");
+	
+	SC_REPORT_INFO("main", "simulation starts");
+	sc_start(100, SC_NS);
+	cout << "Simulation finished after " << sc_time_stamp() << endl;
+	delete tb;
+	return 0;
+}
+
 
 void Fetch_TB::control_source() {
     rst.write(1);
