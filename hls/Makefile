@@ -17,6 +17,7 @@ tb_control: control/control_tb.cpp $(COMMON_DEPS) $(OBJDIR)/types.o $(OBJDIR)/me
 
 # Common
 $(OBJDIR)/types.o: spec/types.cpp $(COMMON_DEPS)
+	@[ ! -d $(@D) ] & mkdir -p $(@D)
 	$(CXX) -c $< -o $@
 
 # Processing Elements
@@ -39,7 +40,7 @@ $(OBJDIR)/memory.o: memory/$(OBJDIR)/memory.o
 # Utility
 .PHONY: clean
 clean:
-	rm -f *.o a.out tb_control tb_mem tb_pe *.log test_outputs/* report.log
+	rm -rf $(OBJDIR) 
+	rm -f a.out *.o tb_control tb_mem tb_pe
 	$(MAKE) -C processing clean
 	$(MAKE) -C memory clean
-

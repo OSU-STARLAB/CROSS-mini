@@ -13,3 +13,4 @@ tb_memory: memory_tb.cpp $(OBJDIR)/memory.o $(COMMON_DEPS)
 .PHONY: clean
 clean:
 	rm -rf $(OBJDIR)
+	rm -f a.out *.o

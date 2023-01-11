@@ -28,4 +28,4 @@ $(OBJDIR)/store.o: store.cpp store.h $(COMMON_DEPS)
 
 .PHONY: clean
 clean:
-	rm -rf $(OBJDIR)
+	rm -rf $(OBJDIR) a.out *.o

@@ -7,4 +7,6 @@ all:
 
 .PHONY: clean
 clean:
+	rm -f *.log
+	rm -rf test_outputs
 	cd $(SRC_DIR) && $(MAKE) clean
