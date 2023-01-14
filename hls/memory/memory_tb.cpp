@@ -11,21 +11,15 @@ SC_MODULE(Mem_TB) {
     
     SC_CTOR(Mem_TB) :
         dut("dut"),
-        clk("clk_sig", 1, SC_NS),
-        read_addr("read_addr", PE_COUNT*2),
-        read_value("read_value", PE_COUNT*2),
-        write_addr("write_addr", PE_COUNT),
-        write_value("write_value", PE_COUNT)
+        clk("clk_sig", 1, SC_NS)
     {
-        for (int i = 0; i < PE_COUNT*2; i++) {
-            dut.read_addr[i](read_addr[i]);
-            read_value[i](dut.read_value[i]);
-            read_any_done |= dut.mem_read_done[i];
+        for (auto & read_port : dut.read_ports) {
+            read_ports.push_back(new mem::read_requester(read_port));
+            read_any_done |= read_ports.back()->done;
         }
-        for (int i = 0; i < PE_COUNT; i++) {
-            dut.write_addr[i](write_addr[i]);
-            dut.write_value[i](write_value[i]);
-            write_any_done |= dut.mem_write_done[i];
+        for (auto & write_port : dut.write_ports) {
+            write_ports.push_back(new mem::write_requester(write_port));
+            write_any_done |= write_ports.back()->done;
         }
         
         dut.clk(clk);
@@ -46,14 +40,11 @@ SC_MODULE(Mem_TB) {
         sc_clock clk;
         sc_signal<bool> rst;
         // read ports: fetching fibers
-        sc_vector<sc_signal<pointer_type>> read_addr;
-        sc_vector<sc_in<fiber_entry>> read_value;
+        std::vector<mem::read_requester*> read_ports;
+        sc_event_or_list read_any_done;
         
         // write ports: storing results
-        sc_vector<sc_signal<pointer_type>> write_addr;
-        sc_vector<sc_signal<fiber_entry>> write_value;
-        
-        sc_event_or_list read_any_done;
+        std::vector<mem::write_requester*> write_ports;        
         sc_event_or_list write_any_done;
 };
 
@@ -94,9 +85,9 @@ void Mem_TB::mem_repl() {
                 } while (i >= PE_COUNT*2 || i < 0);
                 cout << "address: " << endl;
                 cin >> addr;
-                read_addr[i] = addr;
+                read_ports[i]->addr = addr;
                 
-                dut.mem_read[i].notify(1, SC_NS);
+                dut.read_ports[i].execute.notify(1, SC_NS);
                 cout << "notified." << endl << endl;
                 break;
             case 'w':  // write
@@ -106,12 +97,12 @@ void Mem_TB::mem_repl() {
                 } while (i >= PE_COUNT || i < 0);
                 cout << "address: " << endl;
                 cin >> addr;
-                write_addr[i] = addr;
+                write_ports[i]->addr = addr;
                 cout << "value: " << endl;
                 cin >> val;
-                write_value[i].write(fiber_entry(5, val));
+                write_ports[i]->value.write(fiber_entry(5, val));
                 
-                dut.mem_write[i].notify(1, SC_NS);
+                dut.write_ports[i].execute.notify(1, SC_NS);
                 cout << "notified." << endl << endl;
                 break;
             case 'n':  // next
@@ -125,18 +116,21 @@ void Mem_TB::mem_repl() {
 void Mem_TB::mem_repl_callback_read() {
     while (true) {
         wait(read_any_done);
-        for (int i = 0; i < PE_COUNT*2; i++)
-            if (dut.mem_read_done[i].triggered())
-                cout << "mem read " << i << " done! "
-                << "Got " << read_value[i] << endl;
+        cout << "###########" << endl;
+        for (auto read_port : read_ports)
+            if (read_port->done.triggered())
+                cout << "mem read " << &read_port-&read_ports[0] << " done! "
+                << "Got " << read_port->value << endl;
     }
 }
 
 void Mem_TB::mem_repl_callback_write() {
     while (true) {
         wait(write_any_done);
-        for (int i = 0; i < PE_COUNT; i++)
-            if (dut.mem_write_done[i].triggered())
-                cout << "mem write " << i << " done!" << endl;
+        cout << "***********" << endl;
+        for (auto write_port : write_ports)
+            if (write_port->done.triggered())
+                cout << "mem write " << &write_port-&write_ports[0]
+                << " done!" << endl;
     }
 }

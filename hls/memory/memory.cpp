@@ -16,19 +16,19 @@ void Mem::read_listener() {
     while (true) {
         // check all events in parallel every cycle
         MODULE_INFO("waiting!");
-        wait(mem_read_any);
+        wait(read_any);
         MODULE_INFO("woken up!");
         // check if any events need to be serviced
         for (int i = 0; i < PE_COUNT*2; i++) {
             // if this event is in progress
-            if (mem_read[i].triggered()) {
+            if (read_ports[i].execute.triggered()) {
                 // if it just started
-                uint mem_addr = read_addr[i].read();
+                uint mem_addr = read_ports[i].addr.read();
                 MODULE_INFO("read " << i << " triggered"
                     << " at addr " << mem_addr
                 )
-                read_value[i] = contents[mem_addr];
-                mem_read_done[i].notify(MEMORY_READ_LATENCY, SC_NS);
+                read_ports[i].value = contents[mem_addr];
+                read_ports[i].done.notify(MEMORY_READ_LATENCY, SC_NS);
             }
         }
     }
@@ -37,19 +37,19 @@ void Mem::read_listener() {
 void Mem::write_listener() {
     while (true) {
         // check all events in parallel every cycle
-        wait(mem_write_any);
+        wait(write_any);
         // check if any events need to be serviced
         for (int i = 0; i < PE_COUNT; i++) {
             // if this event is in progress
-            if (mem_write[i].triggered()) {
+            if (write_ports[i].execute.triggered()) {
                 // if it just started
-                uint mem_addr = write_addr[i].read();
+                uint mem_addr = write_ports[i].addr.read();
                 MODULE_INFO("write " << i << " triggered"
                     << " at addr " << mem_addr
-                    << " with value " << write_value[i]
+                    << " with value " << write_ports[i].value
                 )
-                contents[mem_addr] = write_value[i];
-                mem_write_done[i].notify(MEMORY_WRITE_LATENCY, SC_NS);
+                contents[mem_addr] = write_ports[i].value;
+                write_ports[i].done.notify(MEMORY_WRITE_LATENCY, SC_NS);
             }
         }
     }
