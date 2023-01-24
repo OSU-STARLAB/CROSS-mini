@@ -13,12 +13,12 @@ SC_MODULE(Mem_TB) {
         dut("dut"),
         clk("clk_sig", 1, SC_NS)
     {
-        for (auto & read_port : dut.read_ports) {
-            read_ports.push_back(new mem::read_requester(read_port));
+        for (auto & dut_read_provider : dut.read_ports) {
+            read_ports.emplace_back(dut_read_provider);
             read_any_done |= read_ports.back()->done;
         }
-        for (auto & write_port : dut.write_ports) {
-            write_ports.push_back(new mem::write_requester(write_port));
+        for (auto & dut_write_provider : dut.write_ports) {
+            write_ports.emplace_back(dut_write_provider);
             write_any_done |= write_ports.back()->done;
         }
         
