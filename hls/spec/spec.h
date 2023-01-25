@@ -24,7 +24,8 @@
 #define MODULE_WARNING(content) MODULE_REPORT(SC_REPORT_WARNING, content)
 #define MODULE_ERROR(content)   MODULE_REPORT(SC_REPORT_ERROR,   content)
 
-
+// Tensors can have at most MAX_ORDER dimensions
+#define MAX_ORDER 10
 
 /*
     MODULE PARAMETERS
