@@ -43,13 +43,15 @@ void Control_TB::tb_main() {
     cout << "starting coord: " << iterA << " " << iterB << endl;
     cout << "A shape: " << A.shape << endl;
     cout << "B shape: " << B.shape << endl;
+    cout << "C shape: " << A.shape.last_contract(B.shape) << endl;
     
     bool cont = true;
     while (cont) {
-        cout << iterA << iterB << endl;
+        cout << "inputs: " << iterA << iterB;
+        cout << "\t\toutput: " << iterA.concat(iterB) << endl;
         cont = A.increment(iterA);
         if (!cont) {
-            cout << "--------------" << endl;
+            cout << endl;
             cont = B.increment(iterB);
         }
         wait(1, SC_NS);

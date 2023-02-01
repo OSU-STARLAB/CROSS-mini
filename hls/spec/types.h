@@ -98,15 +98,15 @@ struct coord {
 
     coord(count_type order) : order(order) {
         if (order > MAX_ORDER)
-            throw new std::out_of_range("MAX_ORDER exceeded in coord init");
+            throw new std::length_error("MAX_ORDER exceeded in coord init");
         for (int i = 0; i < order; i++)
             this->idx[i] = 0;
     }
     coord(count_type * arr, count_type order) : order(order) {
         if (order > MAX_ORDER)
-            throw new std::out_of_range("MAX_ORDER exceeded in coord init");
+            throw new std::length_error("MAX_ORDER exceeded in coord init");
         if (order < 1)
-            throw new std::out_of_range("coord can't havve order 0");
+            throw new std::length_error("coord can't have order 0");
         for (int i = 0; i < order; i++)
             this->idx[i] = arr[i];
     }
@@ -128,7 +128,7 @@ struct coord {
         return true;
     }
     
-    count_type operator[] (int i) { return this->idx[i]; }
+    count_type & operator[] (int i) { return this->idx[i]; }
     const count_type operator[] (int i) const { return this->idx[i]; }
     
     bool zero() const {
@@ -161,12 +161,16 @@ struct coord {
 
     // make contraction destination index
     coord contract(const coord &rhs, count_type lhs_contract, count_type rhs_contract) const {
+        if (this->idx[lhs_contract] != rhs[rhs_contract])
+            throw new std::length_error("contraction orders unequal");
         return this->truncate(lhs_contract).concat(rhs.truncate(rhs_contract));
     }
     
     // special case when contract index is last for both coords
     // (I expect this to be the default)
     coord last_contract(const coord &rhs) const {
+        if (this->idx[this->order-1] != rhs[rhs.order-1])
+            throw new std::length_error("contraction orders unequal");
         coord new_coord = coord(this->order + rhs.order - 2);
         int i;
         for (i = 0; i < this->order-1; i++)
@@ -192,7 +196,7 @@ struct tensor {
     // increment the referenced index. Returns false if it overflows
     bool increment(coord & c) {
         if (this->shape.order != c.order && this->shape.order != c.order+1) {
-            throw new std::out_of_range("cannot increment unrelated coord");
+            throw new std::invalid_argument("cannot increment unrelated coord");
         }
         // increment through all indices or all but last
         for (int i = 0; i < c.order; i++) {
