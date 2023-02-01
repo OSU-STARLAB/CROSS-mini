@@ -1,4 +1,5 @@
 #include "types.h"
+#include <systemc.h>
 
 std::ostream & operator<< (std::ostream & os, const fiber_entry & ent) {
     os << '(' << ent.index << ',' << ent.value << ')';

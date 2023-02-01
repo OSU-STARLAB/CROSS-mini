@@ -1,4 +1,4 @@
-#include <systemc>
+#include <systemc.h>
 #include "../spec/spec.h"
 
 SC_MODULE(Mem) {
