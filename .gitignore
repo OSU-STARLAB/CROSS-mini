@@ -5,3 +5,4 @@ tb_pe
 *.o
 a.out
 build
+__pycache__

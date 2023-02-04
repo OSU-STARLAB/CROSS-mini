@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+"""
+functions and types for interacting with accelerator sim
+"""
+
+import struct
+from itertools import starmap
+from functools import partial
+from scipy.sparse import csr_matrix
+
+TensorElement = float
+
+class Tensor(csr_matrix):
+    """
+    Data structure that mirrors the format sent to the accelerator
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # little endian uint32
+        self.ptrpacker = partial(map, struct.Struct("<I").pack)
+        # little endian int32, float
+        self.entrypacker = partial(starmap, struct.Struct("<if").pack)
+        # starmap(pack, zip(a, b))
+        # starmap() >> !!==
+
+    def serialize(self):
+        """
+        Return the byte-wise format that can be sent directly over
+        """
+        pointers = b''.join(self.ptrpacker(self.indptr))
+        entries = b''.join(self.entrypacker(zip(self.indices, self.data)))
+        return pointers, entries
+
+    def gen_append(self):
+        """
+        Return list of arguments to "append_fiber" hls memory function
+        """
+        return []
+
+    def __str__(self):
+        return f"data {self.data}\nindices {self.indices}\nindptr {self.indptr}"
+
+
+def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
+    """
+    Read a single fiber from a file as a column of a sparse matrix.
+	The result is a sparse CSR matrix with shape (repeat, fiber_len)
+
+	filename:  The .csf file to read
+	repeat:    How many times to repeat this column?
+	fiber_len: How long is the column? It's sparse, so default is to assume
+	           the last index is the highest one, but it could be higher.
+    """
+    with open(filename, "r", encoding="UTF-8") as file:
+        # gobble header with column names
+        file.readline()
+
+        # read rest of file into memory
+        pairs = [line.split(',') for line in file]
+
+        # grab first of each pair as coord and second as data
+        coords_single = [int(p[0]) for p in pairs]
+
+		# fit matrix height to data if length unspecified
+        if fiber_len < 1:
+            fiber_len = max(coords_single) + 1
+
+        coords = ([], coords_single * repeat)
+        data = [TensorElement(p[1]) for p in pairs]
+
+        # repeat single fiber many times
+        for i in range(repeat):
+            for _ in range(len(data)):
+                coords[0].append(i)
+
+        # convert to tensor format
+        return Tensor((data*repeat, coords), shape=(repeat, fiber_len))
+
+
+if __name__ == "__main__":
+    T = read_csf_file_repeat("../test_inputs/fiber_a.csf", 2)
+    print(T)
+    print("\npacked form:")
+    print('\n'.join(i.hex() for i in T.serialize()))
