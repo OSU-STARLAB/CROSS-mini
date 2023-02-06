@@ -74,3 +74,4 @@ SC_MODULE(Control) {
         sc_vector<sc_signal<pointer_type>> fiber_b_ends;
         sc_vector<sc_signal<pointer_type>> destinations;
 };
+

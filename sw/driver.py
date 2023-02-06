@@ -14,21 +14,20 @@ class Tensor(csr_matrix):
     """
     Data structure that mirrors the format sent to the accelerator
     """
+    # little endian uint32
+    ptrpacker = partial(map, struct.Struct("<I").pack)
+    # little endian int32, float
+    entrypacker = partial(starmap, struct.Struct("<if").pack)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # little endian uint32
-        self.ptrpacker = partial(map, struct.Struct("<I").pack)
-        # little endian int32, float
-        self.entrypacker = partial(starmap, struct.Struct("<if").pack)
-        # starmap(pack, zip(a, b))
-        # starmap() >> !!==
 
-    def serialize(self):
+    def serialize(self, offset=0):
         """
         Return the byte-wise format that can be sent directly over
         """
-        pointers = b''.join(self.ptrpacker(self.indptr))
+        indptr = (p + offset for p in self.indptr)
+        pointers = b''.join(self.ptrpacker(indptr))
         entries = b''.join(self.entrypacker(zip(self.indices, self.data)))
         return pointers, entries
 
