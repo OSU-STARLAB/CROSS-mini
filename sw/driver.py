@@ -5,19 +5,26 @@ functions and types for interacting with accelerator sim
 
 import struct
 from itertools import starmap
-from functools import partial
 from scipy.sparse import csr_matrix
 
 TensorElement = float
+
+# little endian uint32
+def _ptrpacker(data):
+    return b''.join(map(struct.Struct("<I").pack, data))
+def _ptrunpacker(data):
+    return struct.Struct("<I").unpack(data)[0]
+# little endian int32, float
+def _entrypacker(indices, data):
+    return b''.join(starmap(struct.Struct("<if").pack, zip(indices, data)))
+def _entryunpacker(data):
+    return struct.Struct("<if").unpack(data)
+
 
 class Tensor(csr_matrix):
     """
     Data structure that mirrors the format sent to the accelerator
     """
-    # little endian uint32
-    ptrpacker = partial(map, struct.Struct("<I").pack)
-    # little endian int32, float
-    entrypacker = partial(starmap, struct.Struct("<if").pack)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -26,10 +33,19 @@ class Tensor(csr_matrix):
         """
         Return the byte-wise format that can be sent directly over
         """
-        indptr = (p + offset for p in self.indptr)
-        pointers = b''.join(self.ptrpacker(indptr))
-        entries = b''.join(self.entrypacker(zip(self.indices, self.data)))
-        return pointers, entries
+        data = b''
+        # order, shape, entry count
+        data += _ptrpacker(
+            [len(self.shape)] +
+            list(self.shape) +
+            [len(self.data)]
+        )
+        # actual entries
+        data += _entrypacker(self.indices, self.data)
+        # pointer count, then pointers
+        indptr = [len(self.indptr)] + [p + offset for p in self.indptr]
+        data += _ptrpacker(indptr)
+        return data
 
     def gen_append(self):
         """
@@ -77,8 +93,27 @@ def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
         return Tensor((data*repeat, coords), shape=(repeat, fiber_len))
 
 
+def read_csfbin_file(filename: str):
+    """
+    Read a csfbin file, which is an unambiguous file format
+    described in formats.md. Returns a new Tensor
+    """
+    with open(filename, "rb") as file:
+        order = _ptrunpacker(file.read(4))
+        shape = list(map(_ptrunpacker, [file.read(4) for _ in range(order)]))
+        entry_count = _ptrunpacker(file.read(4))
+        entries = list(map(_entryunpacker, [file.read(8) for _ in range(entry_count)]))
+        ptr_count = _ptrunpacker(file.read(4))
+        ptrs = list(map(_ptrunpacker, [file.read(4) for _ in range(ptr_count)]))
+        (indices, data) = zip(*entries)
+        return Tensor((data, indices, ptrs), shape=shape)
+
+
 if __name__ == "__main__":
     T = read_csf_file_repeat("../test_inputs/fiber_a.csf", 2)
     print(T)
     print("\npacked form:")
-    print('\n'.join(i.hex() for i in T.serialize()))
+    print(T.serialize().hex())
+    with open("../test_inputs/fiber_ax2.csfbin", "wb") as f:
+        f.write(T.serialize())
+    print(read_csfbin_file("../test_inputs/fiber_ax2.csfbin"))
