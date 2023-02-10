@@ -24,7 +24,8 @@ SC_MODULE(Mem) {
     void write_listener();
     
     // simulation-only helper functions
-    std::tuple<pointer_type,pointer_type> append_fiber(std::string filename);  // returns pointer to start
+    std::tuple<pointer_type,pointer_type> append_fiber_file(std::string filename);  // returns pointer to start
+	pointer_type append_fiber(std::vector<fiber_entry>);
     void print_region(pointer_type start, pointer_type end);
     
     SC_CTOR(Mem) :
@@ -46,7 +47,7 @@ SC_MODULE(Mem) {
             mem_read_any |= mem_read[i];
         for (int i = 0; i < PE_COUNT; i++)
             mem_write_any |= mem_write[i];
-            
+        
         SC_THREAD(readyer);
         dont_initialize();
         sensitive << clk.pos();

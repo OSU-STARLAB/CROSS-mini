@@ -55,7 +55,7 @@ void Mem::write_listener() {
     }
 }
 
-std::tuple<pointer_type,pointer_type> Mem::append_fiber(std::string filename) {
+std::tuple<pointer_type,pointer_type> Mem::append_fiber_file(std::string filename) {
     std::ifstream in;
     in.open(filename);
     if (!in.is_open()) {
@@ -80,7 +80,7 @@ std::tuple<pointer_type,pointer_type> Mem::append_fiber(std::string filename) {
         //cout << "appended " << contents[append_idx-1] << endl;
     }
     in.close();
-    return std::tuple<pointer_type,pointer_type>(start_idx,append_idx-1);
+    return std::tuple<pointer_type,pointer_type>(start_idx,append_idx);
 }
 
 void Mem::print_region(pointer_type start, pointer_type end) {

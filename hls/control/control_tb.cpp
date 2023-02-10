@@ -4,12 +4,13 @@
 //#include "../processing/pe.h"
 
 SC_MODULE(Control_TB) {
-    //Control control;
+    Control control;
     
     void tb_main();
     
     SC_CTOR(Control_TB)
-        : clk("clk_sig", 1, SC_NS)
+		: control("DUT")
+        , clk("clk_sig", 1, SC_NS)
         , rst("rst")
     {
         SC_THREAD(tb_main);
@@ -56,6 +57,11 @@ void Control_TB::tb_main() {
         }
         wait(1, SC_NS);
     }
+
+	control.append_tensor_file("../../test_inputs/fiber_ax2.csfbin");
+	wait(1, SC_NS);
+	control.print_region(0, 10);
+	control.mem.print_region(0, 20);
     
     sc_stop();
 }

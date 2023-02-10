@@ -8,20 +8,27 @@ SC_MODULE(Control) {
     std::vector<PE*> pes;
     
     void main();
+
+	// simulation-only helpers
+	// returns pointer to start of tensor metadata
+	pointer_type append_tensor_file(std::string filename);
+	void print_region(pointer_type start, pointer_type end);
     
-    SC_CTOR(Control) :
-        mem("mem"),
-        clk("clk_sig", 1, SC_NS),
-        rst("rst"),
-        jobs_start("jobs_start", PE_COUNT),
-        jobs_done("jobs_done", PE_COUNT),
-        fiber_a_starts("fa_starts", PE_COUNT),
-        fiber_a_ends("fa_ends", PE_COUNT),
-        fiber_b_starts("fb_starts", PE_COUNT),
-        fiber_b_ends("fb_ends", PE_COUNT),
-        destinations("destinations", PE_COUNT)
+    SC_CTOR(Control)
+        : mem("mem")
+        , clk("clk_sig", 1, SC_NS)
+        , rst("rst")
+        , jobs_start("jobs_start", PE_COUNT)
+        , jobs_done("jobs_done", PE_COUNT)
+        , fiber_a_starts("fa_starts", PE_COUNT)
+        , fiber_a_ends("fa_ends", PE_COUNT)
+        , fiber_b_starts("fb_starts", PE_COUNT)
+        , fiber_b_ends("fb_ends", PE_COUNT)
+        , destinations("destinations", PE_COUNT)
+		, metadata("metadata", 1024)
     {
         mem.clk(clk);
+		append_idx = 0;
         
         for (int i = 0; i < PE_COUNT; i++) {
             std::string name = "pe";
@@ -54,6 +61,8 @@ SC_MODULE(Control) {
             mem.write_addr[i](new_pe->mem_write_address_c);
             mem.write_value[i](new_pe->mem_write_value_c);
         }
+
+		// load data and metadata
         
         SC_THREAD(main);
     }
@@ -73,5 +82,8 @@ SC_MODULE(Control) {
         sc_vector<sc_signal<pointer_type>> fiber_b_starts;
         sc_vector<sc_signal<pointer_type>> fiber_b_ends;
         sc_vector<sc_signal<pointer_type>> destinations;
+
+		sc_vector<sc_signal<pointer_type>> metadata;  // tensor pointers
+		pointer_type append_idx;
 };
 
