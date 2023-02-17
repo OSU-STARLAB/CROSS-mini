@@ -51,9 +51,9 @@ pointer_type Control::append_tensor_file(std::string filename) {
 		fiber.push_back(unpack_fiber_entry(in));
 		cout << fiber.back() << " ";
 	}
-	//pointer_type fiber_start = mem.append_fiber(fiber);
-	pointer_type fiber_start = 1;
-	
+	pointer_type fiber_start = mem.append_fiber(fiber);
+	//pointer_type fiber_start = 1;
+
 	// and pointers to those fibers in metadata memory
 	len = unpack_pointer(in);
 	cout << endl << "len is " << len << endl;

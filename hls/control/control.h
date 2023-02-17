@@ -6,14 +6,14 @@
 SC_MODULE(Control) {
     Mem mem;
     std::vector<PE*> pes;
-    
+
     void main();
 
 	// simulation-only helpers
 	// returns pointer to start of tensor metadata
 	pointer_type append_tensor_file(std::string filename);
 	void print_region(pointer_type start, pointer_type end);
-    
+
     SC_CTOR(Control)
         : mem("mem")
         , clk("clk_sig", 1, SC_NS)
@@ -29,7 +29,7 @@ SC_MODULE(Control) {
     {
         mem.clk(clk);
 		append_idx = 0;
-        
+
         for (int i = 0; i < PE_COUNT; i++) {
             std::string name = "pe";
             name.append(std::to_string(i));
@@ -42,36 +42,36 @@ SC_MODULE(Control) {
             pes.push_back(new_pe);
             new_pe->clk(clk);
             new_pe->rst(rst);
-            
+
             new_pe->fiber_a_start(fiber_a_starts[i]);
             new_pe->fiber_a_end(fiber_a_ends[i]);
             new_pe->fiber_b_start(fiber_b_starts[i]);
             new_pe->fiber_b_end(fiber_b_ends[i]);
-            new_pe->destination(destinations[i]);            
-            
+            new_pe->destination(destinations[i]);
+
             new_pe->mem_ready(mem.ready);
-            
+
             mem.read_addr[i](new_pe->mem_read_address_a);
-            
+
             mem.read_addr[i+PE_COUNT](new_pe->mem_read_address_b);
-            
+
             new_pe->mem_res_value_a(mem.read_value[i]);
             new_pe->mem_res_value_b(mem.read_value[i+PE_COUNT]);
-            
+
             mem.write_addr[i](new_pe->mem_write_address_c);
             mem.write_value[i](new_pe->mem_write_value_c);
         }
 
 		// load data and metadata
-        
+
         SC_THREAD(main);
     }
-    
+
     ~Control() {
         // not totally sure if this will destruct correctly
         pes.clear();
     }
-    
+
     private:
         sc_clock clk;
         sc_signal<bool> rst;

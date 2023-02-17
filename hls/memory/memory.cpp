@@ -62,25 +62,33 @@ std::tuple<pointer_type,pointer_type> Mem::append_fiber_file(std::string filenam
         perror(filename.c_str());
         exit(1);
     }
-    
+
     pointer_type start_idx = append_idx;
     tensor_element val;
     count_type idx;
     fiber_entry entry;
     std::string line;
     getline(in, line);  // skip column headers
-    
+
     while (getline(in, line)) {
         line.replace(line.find(","), 1, " ");
         std::istringstream iss(line);
         iss >> idx >> val;
         entry = fiber_entry(idx, val);
-        
+
         contents[append_idx++] = entry;
         //cout << "appended " << contents[append_idx-1] << endl;
     }
     in.close();
     return std::tuple<pointer_type,pointer_type>(start_idx,append_idx);
+}
+
+pointer_type Mem::append_fiber(std::vector<fiber_entry> fiber) {
+	pointer_type start_idx = append_idx;
+	for (fiber_entry entry : fiber) {
+		contents[append_idx++] = entry;
+	}
+	return start_idx;
 }
 
 void Mem::print_region(pointer_type start, pointer_type end) {

@@ -5,9 +5,10 @@
 
 SC_MODULE(Control_TB) {
     Control control;
-    
+
     void tb_main();
-    
+	pointer_type append_tensor_file(std::string filename);
+
     SC_CTOR(Control_TB)
 		: control("DUT")
         , clk("clk_sig", 1, SC_NS)
@@ -15,7 +16,7 @@ SC_MODULE(Control_TB) {
     {
         SC_THREAD(tb_main);
     }
-    
+
     private:
         sc_clock clk;
         sc_signal<bool> rst;
@@ -29,23 +30,27 @@ int sc_main(int argc, char * argv[]) {
     return 0;
 }
 
+pointer_type Control_TB::append_tensor_file(std::string filename) {
+	return control.append_tensor_file(filename);
+}
+
 void Control_TB::tb_main() {
     count_type shape_arr[3] = {5, 4, 2};
     coord shape = coord(shape_arr, 3);
     tensor A = tensor(shape, 0);
-    
+
     count_type shape_arr2[4] = {3, 2, 3, 2};
     coord shape2 = coord(shape_arr2, 4);
     tensor B = tensor(shape2, 0);
 
     coord iterA = coord(2);
     coord iterB = coord(3);
-    
+
     cout << "starting coord: " << iterA << " " << iterB << endl;
     cout << "A shape: " << A.shape << endl;
     cout << "B shape: " << B.shape << endl;
     cout << "C shape: " << A.shape.last_contract(B.shape) << endl;
-    
+
     bool cont = true;
     while (cont) {
         cout << "inputs: " << iterA << iterB;
@@ -58,10 +63,11 @@ void Control_TB::tb_main() {
         wait(1, SC_NS);
     }
 
-	control.append_tensor_file("../../test_inputs/fiber_ax2.csfbin");
+	pointer_type tensor_A = control.append_tensor_file("../../test_inputs/fiber_ax2.csfbin");
+	pointer_type tensor_B = control.append_tensor_file("../../test_inputs/fiber_ax2.csfbin");
 	wait(1, SC_NS);
-	control.print_region(0, 10);
-	control.mem.print_region(0, 20);
-    
+	control.print_region(0, tensor_B*3);
+	control.mem.print_region(0, 50);
+
     sc_stop();
 }
