@@ -6,7 +6,7 @@
 
 /*
     LOGGING
-    
+
     Wrapper around built-in SystemC logging that makes it easier to print
     values because of dynamic string conversion in stream operators.
     Note that it requires name() to be defined, so this must be called
@@ -32,7 +32,7 @@
 
 /*
     MODULE PARAMETERS
-    
+
     Here are all the constants related to each module's design. This is for
     things that are constant when elaborating, but could in theory have any
     value. Any constraints should be mentioned for each value.
@@ -74,7 +74,7 @@ typedef sc_uint<32> pointer_type;
 struct fiber_entry {
     count_type index;
     tensor_element value;
-    
+
     fiber_entry(count_type index = -1, tensor_element value = 0) :
         index(index), value(value) {}
 
@@ -87,10 +87,18 @@ struct fiber_entry {
     bool operator== (const fiber_entry &rhs) {
         return index == rhs.index && value == rhs.value;
     }
-    
-    friend std::ostream & operator<< (std::ostream & os, const fiber_entry & ent);    
+
+    friend std::ostream & operator<< (std::ostream & os, const fiber_entry & ent);
 };
 void sc_trace(sc_trace_file *&, const fiber_entry &, std::string &);
+
+struct job {
+	pointer_type a_start;
+	pointer_type a_end;
+	pointer_type b_start;
+	pointer_type b_end;
+	pointer_type destination;
+};
 
 struct coord {
     count_type idx[MAX_ORDER];
@@ -127,17 +135,17 @@ struct coord {
                 return false;
         return true;
     }
-    
+
     count_type & operator[] (int i) { return this->idx[i]; }
     const count_type operator[] (int i) const { return this->idx[i]; }
-    
+
     bool zero() const {
         for (int i = 0; i < this->order; i++)
             if (this->idx[i])
                 return false;
         return true;
     }
-    
+
     coord concat(const coord &rhs) const {
         coord new_coord = coord(this->order + rhs.order);
         for (int i = 0; i < this->order; i++)
@@ -145,10 +153,10 @@ struct coord {
         int j = 0;
         for (int i = this->order; i < new_coord.order; i++)
             new_coord[i] = rhs.idx[j++];
-        
+
         return new_coord;
     }
-    
+
     coord truncate(count_type drop_idx) const {
         coord new_coord = coord(this->order-1);
         int j = 0;
@@ -165,7 +173,7 @@ struct coord {
             throw new std::length_error("contraction orders unequal");
         return this->truncate(lhs_contract).concat(rhs.truncate(rhs_contract));
     }
-    
+
     // special case when contract index is last for both coords
     // (I expect this to be the default)
     coord last_contract(const coord &rhs) const {
@@ -192,7 +200,7 @@ struct tensor {
         : shape(_shape)
         , fibers(_fibers)
     {}
-    
+
     // increment the referenced index. Returns false if it overflows
     bool increment(coord & c) {
         if (this->shape.order != c.order && this->shape.order != c.order+1) {
@@ -213,11 +221,24 @@ struct tensor {
             if (c.idx[i] != this->shape.idx[i])
                 break; // done incrementing
             else {
-                c.idx[i] = 0;   
+                c.idx[i] = 0;
                 continue; // increment next digit
             }*/
         }
         return !c.zero();
     }
+
+	pointer_type coord_2_metaptr(const coord & c) {
+		if (this->shape.order != c.order) {
+			throw new std::invalid_argument("cannot convert unrelated coord");
+		}
+		pointer_type res = fibers;
+		pointer_type stride = 1;
+		for (int i = this->shape.order-2; i >= 0; i--) {
+			res += c[i] * stride;
+			stride *= this->shape[i];
+		}
+		return res;
+	}
 };
 void sc_trace(sc_trace_file *&, const tensor &, std::string &);

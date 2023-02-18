@@ -14,6 +14,13 @@ SC_MODULE(Control) {
 	pointer_type append_tensor_file(std::string filename);
 	void print_region(pointer_type start, pointer_type end);
 
+	// input pointers, output pointer
+	sc_in<pointer_type> tensor_A, tensor_B;
+	sc_signal<pointer_type> tensor_C;
+	sc_event contract_start;
+
+	void contract();
+
     SC_CTOR(Control)
         : mem("mem")
         , clk("clk_sig", 1, SC_NS)
@@ -25,6 +32,7 @@ SC_MODULE(Control) {
         , fiber_b_starts("fb_starts", PE_COUNT)
         , fiber_b_ends("fb_ends", PE_COUNT)
         , destinations("destinations", PE_COUNT)
+		, jobs("jobs", 64)  // TODO: break out into #define
 		, metadata("metadata", 1024)
     {
         mem.clk(clk);
@@ -65,6 +73,8 @@ SC_MODULE(Control) {
 		// load data and metadata
 
         SC_THREAD(main);
+		SC_THREAD(contract);
+		sensitive << contract_start;
     }
 
     ~Control() {
@@ -82,6 +92,8 @@ SC_MODULE(Control) {
         sc_vector<sc_signal<pointer_type>> fiber_b_starts;
         sc_vector<sc_signal<pointer_type>> fiber_b_ends;
         sc_vector<sc_signal<pointer_type>> destinations;
+
+		sc_fifo<job> jobs;
 
 		sc_vector<sc_signal<pointer_type>> metadata;  // tensor pointers
 		pointer_type append_idx;

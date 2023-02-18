@@ -23,6 +23,73 @@ fiber_entry unpack_fiber_entry(std::ifstream & in) {
 	return f;
 }
 
+void Control::contract() {
+	pointer_type start_A = tensor_A.read();
+	count_type shape_A_arr[MAX_ORDER];
+	count_type order_A = (int32_t)metadata[start_A].read();
+	wait(1, SC_NS);
+
+	pointer_type start_B = tensor_B.read();
+	count_type shape_B_arr[MAX_ORDER];
+	count_type order_B = (int32_t)metadata[start_B].read();
+	wait(1, SC_NS);
+
+	for (pointer_type i = 0; i < metadata[start_A]; i++) {
+		shape_A_arr[i] = metadata[start_A + i].read();
+	}
+	for (pointer_type i = 0; i < metadata[start_B]; i++) {
+		shape_B_arr[i] = metadata[start_B + i].read();
+	}
+	wait(1, SC_NS);
+
+	coord shape_A = coord(shape_A_arr, order_A);
+	coord iter_A = coord(order_A);
+	tensor A(shape_A, start_A);
+
+	coord shape_B = coord(shape_B_arr, order_B);
+	coord iter_B = coord(order_B);
+	tensor B(shape_B, start_B);
+
+	coord shape_C = shape_A.last_contract(shape_B);
+	tensor C(shape_C, mem.append_idx);
+	metadata[append_idx++] = (uint32_t)shape_C.order;
+	for (pointer_type i = 0; i < shape_C.order; i++) {
+		metadata[append_idx++] = (uint32_t)shape_C[i];
+	}
+
+	// allocate dense denstination :(
+	coord iter_C = coord(shape_C.order);
+	bool cont = true;
+	while (cont) {
+		metadata[append_idx++] = (uint32_t)C.coord_2_metaptr(iter_C);
+		cont = C.increment(iter_C);
+		wait(1, SC_NS);
+	}
+
+	// TODO: combine above and below loops
+
+	// distribute jobs
+	cont = true;
+	while (cont) {
+		// jobdest = iter_A.concat(iter_B);
+		jobs.write(job{
+			metadata[A.coord_2_metaptr(iter_A)],
+			metadata[A.coord_2_metaptr(iter_A)+1],
+			metadata[B.coord_2_metaptr(iter_B)],
+			metadata[B.coord_2_metaptr(iter_B)+1],
+			(uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B))
+		});
+		// TODO: need to monitor events and read from this queue in a new thread
+		// TODO: destination pointer is probably wrong. Need to think about shape more
+
+		cont = A.increment(iter_A);
+		if (!cont) {
+			cont = B.increment(iter_B);
+		}
+		wait(1, SC_NS);
+	}
+}
+
 pointer_type Control::append_tensor_file(std::string filename) {
 	std::ifstream in;
 	in.open(filename, ios::binary);
