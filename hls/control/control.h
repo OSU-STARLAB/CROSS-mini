@@ -20,6 +20,8 @@ SC_MODULE(Control) {
 	sc_event contract_start;
 
 	void contract();
+	void distribute_jobs();
+	void PE_done_watch();
 
     SC_CTOR(Control)
         : mem("mem")
@@ -33,6 +35,7 @@ SC_MODULE(Control) {
         , fiber_b_ends("fb_ends", PE_COUNT)
         , destinations("destinations", PE_COUNT)
 		, jobs("jobs", 64)  // TODO: break out into #define
+		, PEs_running("running", PE_COUNT)
 		, metadata("metadata", 1024)
     {
         mem.clk(clk);
@@ -70,11 +73,15 @@ SC_MODULE(Control) {
             mem.write_value[i](new_pe->mem_write_value_c);
         }
 
-		// load data and metadata
+        for (int i = 0; i < PE_COUNT; i++)
+            PEs_done |= jobs_done[i];
 
         SC_THREAD(main);
 		SC_THREAD(contract);
 		sensitive << contract_start;
+		SC_THREAD(distribute_jobs);
+		sensitive << clk;
+		SC_THREAD(PE_done_watch);
     }
 
     ~Control() {
@@ -94,6 +101,9 @@ SC_MODULE(Control) {
         sc_vector<sc_signal<pointer_type>> destinations;
 
 		sc_fifo<job> jobs;
+		sc_vector<sc_signal<bool>> PEs_running;
+
+		sc_event_or_list PEs_done;
 
 		sc_vector<sc_signal<pointer_type>> metadata;  // tensor pointers
 		pointer_type append_idx;

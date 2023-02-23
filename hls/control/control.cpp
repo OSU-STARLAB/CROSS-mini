@@ -79,7 +79,6 @@ void Control::contract() {
 			metadata[B.coord_2_metaptr(iter_B)+1],
 			(uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B))
 		});
-		// TODO: need to monitor events and read from this queue in a new thread
 		// TODO: destination pointer is probably wrong. Need to think about shape more
 
 		cont = A.increment(iter_A);
@@ -87,6 +86,55 @@ void Control::contract() {
 			cont = B.increment(iter_B);
 		}
 		wait(1, SC_NS);
+	}
+	// TODO: signal completion somehow
+}
+
+void Control::PE_done_watch() {
+	// If I integrate this directly in the loop below it could cause a problem:
+	//  - Multiple PEs finish in the same cycle
+	//  - The first one blocks when reading from the jobs fifo
+	//  - A new job is generated and added to the fifo so execution continues
+	//  - Now the second PE that's ready for a job might not cound as .triggered()?
+	// This scenario requires testing since I don't see it in documentation.
+	// This might be a situation where I should use an sc_event_queue.
+	while (true) {
+		wait(PEs_done);
+		for (int i = 0; i < PE_COUNT; i++) {
+			if (jobs_done[i].triggered())
+				PEs_running[i] = false;
+		}
+	}
+}
+
+void Control::distribute_jobs() {
+	// skip initialization phase
+	int idx = 0;
+	wait();
+
+	// round robin. TODO: maybe make this not be round robin
+	while (true) {
+		if (PEs_running[idx] == true) {
+			idx++;
+			if (idx >= PE_COUNT)
+				idx = 0;
+			wait();
+			continue;
+		}
+		job j = jobs.read();
+		fiber_a_starts[idx].write(j.a_start);
+		fiber_a_ends[idx].write(j.a_end);
+		fiber_b_starts[idx].write(j.b_start);
+		fiber_b_ends[idx].write(j.b_end);
+		destinations[idx].write(j.destination);
+		PEs_running[idx] = true;
+		wait();
+		jobs_start[idx].notify();
+
+		idx++;
+		if (idx >= PE_COUNT)
+			idx = 0;
+		wait();
 	}
 }
 
