@@ -49,7 +49,7 @@
 #define MEMORY_WRITE_LATENCY 16
 
 // can't be zero lol
-#define PE_COUNT 64
+#define PE_COUNT 2
 
 
 
@@ -98,6 +98,8 @@ struct job {
 	pointer_type b_start;
 	pointer_type b_end;
 	pointer_type destination;
+
+    friend std::ostream & operator<< (std::ostream & os, const job & j);
 };
 
 struct coord {

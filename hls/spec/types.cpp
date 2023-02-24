@@ -28,3 +28,17 @@ void sc_trace(sc_trace_file *& f, const coord & c, std::string & name) {
         sc_trace(f, c.idx[i], _temp_ss.str().c_str());
     }
 }
+
+std::ostream & operator<< (std::ostream & os, const job & j) {
+	os << "job <" << hex << &j << dec << ">";
+	return os;
+}
+
+void sc_trace(sc_trace_file *& f, const job & j, std::string & name) {
+    sc_trace(f, j.a_start, name+".a_start");
+    sc_trace(f, j.a_end, name+".a_end");
+    sc_trace(f, j.b_start, name+".b_start");
+    sc_trace(f, j.b_end, name+".b_end");
+    sc_trace(f, j.destination, name+".dest");
+    std::stringstream _temp_ss;
+}
