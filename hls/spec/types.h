@@ -113,10 +113,14 @@ struct coord {
             this->idx[i] = 0;
     }
     coord(count_type * arr, count_type order) : order(order) {
-        if (order > MAX_ORDER)
+        if (order > MAX_ORDER) {
+			cout << "E1" << endl;
             throw new std::length_error("MAX_ORDER exceeded in coord init");
-        if (order < 1)
+		}
+        if (order < 1) {
+			cout << "E2" << endl;
             throw new std::length_error("coord can't have order 0");
+		}
         for (int i = 0; i < order; i++)
             this->idx[i] = arr[i];
     }
@@ -232,6 +236,7 @@ struct tensor {
 
 	pointer_type coord_2_metaptr(const coord & c) {
 		if (this->shape.order != c.order) {
+			cout << "E3 tensor shape: " << this->shape.order << ", coord chape: " << c.order << endl;
 			throw new std::invalid_argument("cannot convert unrelated coord");
 		}
 		pointer_type res = fibers;

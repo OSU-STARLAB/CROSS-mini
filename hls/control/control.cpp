@@ -42,6 +42,7 @@ void Control::contract() {
 	}
 	wait(1, SC_NS);
 
+	cout << "T1" << shape_A_arr << " " << order_A << endl;
 	coord shape_A = coord(shape_A_arr, order_A);
 	coord iter_A = coord(order_A);
 	tensor A(shape_A, start_A);
@@ -53,7 +54,7 @@ void Control::contract() {
 	coord shape_C = shape_A.last_contract(shape_B);
 	tensor C(shape_C, mem.append_idx);
 	metadata[append_idx++] = (uint32_t)shape_C.order;
-	for (pointer_type i = 0; i < shape_C.order; i++) {
+	for (pointer_type i = 0; (long long int)i < shape_C.order; i++) {
 		metadata[append_idx++] = (uint32_t)shape_C[i];
 	}
 
@@ -65,6 +66,7 @@ void Control::contract() {
 		cont = C.increment(iter_C);
 		wait(1, SC_NS);
 	}
+	cout << "T6" << endl;
 
 	// TODO: combine above and below loops
 
@@ -79,6 +81,7 @@ void Control::contract() {
 			metadata[B.coord_2_metaptr(iter_B)+1],
 			(uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B))
 		});
+		cout << "T7" << endl;
 		// TODO: destination pointer is probably wrong. Need to think about shape more
 
 		cont = A.increment(iter_A);
@@ -87,7 +90,7 @@ void Control::contract() {
 		}
 		wait(1, SC_NS);
 	}
-	// TODO: signal completion somehow
+	contract_done.notify();
 }
 
 void Control::PE_done_watch() {

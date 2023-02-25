@@ -18,6 +18,7 @@ SC_MODULE(Control) {
 	sc_in<pointer_type> tensor_A, tensor_B;
 	sc_signal<pointer_type> tensor_C;
 	sc_event contract_start;
+	sc_event contract_done;
 
 	void contract();
 	void distribute_jobs();
@@ -79,6 +80,7 @@ SC_MODULE(Control) {
         SC_THREAD(main);
 		SC_THREAD(contract);
 		sensitive << contract_start;
+		dont_initialize();
 		SC_THREAD(distribute_jobs);
 		sensitive << clk;
 		SC_THREAD(PE_done_watch);

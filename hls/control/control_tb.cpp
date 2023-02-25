@@ -5,6 +5,8 @@
 
 SC_MODULE(Control_TB) {
     Control control;
+	sc_signal<pointer_type> tensor_A;
+	sc_signal<pointer_type> tensor_B;
 
     void tb_main();
 	pointer_type append_tensor_file(std::string filename);
@@ -14,6 +16,8 @@ SC_MODULE(Control_TB) {
         , clk("clk_sig", 1, SC_NS)
         , rst("rst")
     {
+		control.tensor_A(tensor_A);
+		control.tensor_B(tensor_B);
         SC_THREAD(tb_main);
     }
 
@@ -62,11 +66,18 @@ void Control_TB::tb_main() {
         }
         wait(1, SC_NS);
     }
+	cout << "finished incrementing" << endl;
 
-	pointer_type tensor_A = control.append_tensor_file("../../test_inputs/fiber_ax2.csfbin");
-	pointer_type tensor_B = control.append_tensor_file("../../test_inputs/fiber_ax2.csfbin");
+	pointer_type ta = control.append_tensor_file("../test_inputs/fiber_ax2.csfbin");
+	pointer_type tb = control.append_tensor_file("../test_inputs/fiber_ax2.csfbin");
 	wait(1, SC_NS);
-	control.print_region(0, tensor_B*3);
+	tensor_A.write(ta);
+	tensor_B.write(tb);
+	wait(1, SC_NS);
+	control.contract_start.notify();
+	wait(control.contract_done);
+	wait(1, SC_NS);
+	control.print_region(0, control.tensor_C.read()*3);
 	control.mem.print_region(0, 50);
 
     sc_stop();

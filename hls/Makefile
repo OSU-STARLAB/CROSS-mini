@@ -6,8 +6,8 @@ SRC=fetch.cpp intersection.cpp store.cpp
 OBJ=$(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))
 
 # Executables
-tb_control: control/control_tb.cpp $(COMMON_DEPS) $(OBJDIR)/types.o $(OBJDIR)/memory.o $(OBJDIR)/pe.o
-	$(CXX) -lsystemc -o $@ control/control_tb.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
+tb_control: control/control_tb.cpp $(COMMON_DEPS) control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
+	$(CXX) -lsystemc -o $@ control/control_tb.cpp control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
 
 #tb_mem: main.cpp memory/memory_tb.cpp $(COMMON_DEPS) $(OBJDIR)/types.o $(OBJDIR)/memory.o
 #	$(CXX) -lsystemc -o $@ memory/memory_tb.cpp $(OBJDIR)/memory.o types.o
@@ -40,7 +40,7 @@ $(OBJDIR)/memory.o: memory/$(OBJDIR)/memory.o
 # Utility
 .PHONY: clean
 clean:
-	rm -rf $(OBJDIR) 
+	rm -rf $(OBJDIR)
 	rm -f a.out *.o tb_control tb_mem tb_pe
 	$(MAKE) -C processing clean
 	$(MAKE) -C memory clean
