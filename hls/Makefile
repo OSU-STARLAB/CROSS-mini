@@ -5,6 +5,9 @@ OBJDIR=build
 SRC=fetch.cpp intersection.cpp store.cpp
 OBJ=$(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))
 
+run: tb_control
+	./tb_control
+
 # Executables
 tb_control: control/control_tb.cpp $(COMMON_DEPS) control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
 	$(CXX) -lsystemc -o $@ control/control_tb.cpp control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
