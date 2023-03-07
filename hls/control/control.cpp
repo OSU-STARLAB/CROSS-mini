@@ -42,7 +42,7 @@ void Control::contract() {
 	}
 	wait(1, SC_NS);
 
-	cout << "T1" << shape_A_arr << " " << order_A << endl;
+	cout << "T1 " << shape_A_arr << " " << order_A << endl;
 	coord shape_A = coord(shape_A_arr, order_A);
 	coord iter_A = coord(order_A);
 	tensor A(shape_A, start_A);
@@ -74,14 +74,26 @@ void Control::contract() {
 	cont = true;
 	while (cont) {
 		// jobdest = iter_A.concat(iter_B);
-		jobs.write(job{
+		pointer_type a_start, a_end, b_start, b_end, dest;
+		cout << "T7a" << endl;
+		a_start = metadata[A.coord_2_metaptr(iter_A)];
+		cout << "T7b" << endl;
+		a_end = metadata[A.coord_2_metaptr(iter_A)+1];
+		cout << "T7c" << endl;
+		b_start = metadata[B.coord_2_metaptr(iter_B)];
+		cout << "T7d" << endl;
+		b_end = metadata[B.coord_2_metaptr(iter_B)+1];
+		cout << "T7e" << endl;
+		dest = (uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B));
+		cout << "T7f" << endl;
+		jobs.write(job{a_start, a_end, b_start, b_end, dest}); /*
 			metadata[A.coord_2_metaptr(iter_A)],
 			metadata[A.coord_2_metaptr(iter_A)+1],
 			metadata[B.coord_2_metaptr(iter_B)],
 			metadata[B.coord_2_metaptr(iter_B)+1],
 			(uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B))
-		});
-		cout << "T7" << endl;
+		});*/
+		cout << "T7g" << endl;
 		// TODO: destination pointer is probably wrong. Need to think about shape more
 
 		cont = A.increment(iter_A);
