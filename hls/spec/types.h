@@ -163,6 +163,17 @@ struct coord {
         return new_coord;
     }
 
+	coord last_concat(const coord &rhs) const {
+		coord new_coord = coord(this->order + rhs.order - 2);
+        for (int i = 0; i < this->order-1; i++)
+            new_coord[i] = this->idx[i];
+        int j = 0;
+        for (int i = this->order-1; i < new_coord.order; i++)
+            new_coord[i] = rhs.idx[j++];
+
+        return new_coord;
+	}
+
     coord truncate(count_type drop_idx) const {
         coord new_coord = coord(this->order-1);
         int j = 0;

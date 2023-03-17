@@ -84,8 +84,10 @@ void Control::contract() {
 		cout << "T7d" << endl;
 		b_end = metadata[B.coord_2_metaptr(iter_B)+1];
 		cout << "T7e" << endl;
-		dest = (uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B));
+		auto concat = iter_A.last_concat(iter_B);
 		cout << "T7f" << endl;
+		dest = (uint32_t)C.coord_2_metaptr(concat);
+		cout << "T7g" << endl;
 		jobs.write(job{a_start, a_end, b_start, b_end, dest}); /*
 			metadata[A.coord_2_metaptr(iter_A)],
 			metadata[A.coord_2_metaptr(iter_A)+1],
@@ -93,7 +95,7 @@ void Control::contract() {
 			metadata[B.coord_2_metaptr(iter_B)+1],
 			(uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B))
 		});*/
-		cout << "T7g" << endl;
+		cout << "T7h" << endl;
 		// TODO: destination pointer is probably wrong. Need to think about shape more
 
 		cont = A.increment(iter_A);
