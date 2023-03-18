@@ -211,12 +211,15 @@ struct coord {
 
 struct tensor {
     coord shape;
+	pointer_type metadata_start;
     pointer_type fibers; // straightforward dense n-D array of fiber pointers
 
-    tensor(coord _shape, pointer_type _fibers)
-        : shape(_shape)
-        , fibers(_fibers)
-    {}
+    tensor(coord _shape, pointer_type _metadata_start)
+		: shape(_shape)
+        , metadata_start(_metadata_start)
+    {
+		this->fibers = this->metadata_start + this->shape.order + 1;
+	}
 
     // increment the referenced index. Returns false if it overflows
     bool increment(coord & c) {
@@ -245,14 +248,14 @@ struct tensor {
         return !c.zero();
     }
 
-	pointer_type coord_2_metaptr(const coord & c) {
-		if (this->shape.order != c.order) {
-			cout << "E3 tensor shape: " << this->shape.order << ", coord chape: " << c.order << endl;
+	pointer_type coord_2_metaptr(const coord & c, bool truncated = false) {
+		if (this->shape.order != c.order+(truncated?1:0)) {
+			cout << "E3 tensor shape: " << this->shape.order << ", coord order: " << c.order << endl;
 			throw new std::invalid_argument("cannot convert unrelated coord");
 		}
-		pointer_type res = fibers;
+		pointer_type res = this->fibers; // metadata for fiber addresses starts right after shape
 		pointer_type stride = 1;
-		for (int i = this->shape.order-2; i >= 0; i--) {
+		for (int i = this->shape.order-(truncated?2:1); i >= 0; i--) {
 			res += c[i] * stride;
 			stride *= this->shape[i];
 		}

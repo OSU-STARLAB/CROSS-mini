@@ -34,31 +34,32 @@ void Control::contract() {
 	count_type order_B = (int32_t)metadata[start_B].read();
 	wait(1, SC_NS);
 
-	for (pointer_type i = 0; i < metadata[start_A]; i++) {
-		shape_A_arr[i] = metadata[start_A + i].read();
+	for (pointer_type i = 0; i < (pointer_type)order_A; i++) {
+		shape_A_arr[i] = metadata[start_A + i + 1].read();
 	}
-	for (pointer_type i = 0; i < metadata[start_B]; i++) {
-		shape_B_arr[i] = metadata[start_B + i].read();
+	for (pointer_type i = 0; i < (pointer_type)order_B; i++) {
+		shape_B_arr[i] = metadata[start_B + i + 1].read();
 	}
 	wait(1, SC_NS);
 
 	cout << "T1 " << shape_A_arr << " " << order_A << endl;
 	coord shape_A = coord(shape_A_arr, order_A);
-	coord iter_A = coord(order_A);
+	coord iter_A = coord(order_A-1);
 	tensor A(shape_A, start_A);
 
 	coord shape_B = coord(shape_B_arr, order_B);
-	coord iter_B = coord(order_B);
+	coord iter_B = coord(order_B-1);
 	tensor B(shape_B, start_B);
 
 	coord shape_C = shape_A.last_contract(shape_B);
-	tensor C(shape_C, mem.append_idx);
+	tensor C(shape_C, append_idx);
 	metadata[append_idx++] = (uint32_t)shape_C.order;
 	for (pointer_type i = 0; (long long int)i < shape_C.order; i++) {
 		metadata[append_idx++] = (uint32_t)shape_C[i];
 	}
 
 	// allocate dense denstination :(
+	// TODO: allocate in the correct space in the main tensor storage memory
 	coord iter_C = coord(shape_C.order);
 	bool cont = true;
 	while (cont) {
@@ -71,23 +72,28 @@ void Control::contract() {
 	// TODO: combine above and below loops
 
 	// distribute jobs
+	print_region(0, 30);
+	cout << "A tensor is shape " << A.shape << " with start " << A.fibers << endl;
+	cout << "B tensor is shape " << B.shape << " with start " << B.fibers << endl;
+	cout << "C tensor is shape " << C.shape << " with start " << C.fibers << endl;
 	cont = true;
 	while (cont) {
 		// jobdest = iter_A.concat(iter_B);
 		pointer_type a_start, a_end, b_start, b_end, dest;
-		cout << "T7a" << endl;
-		a_start = metadata[A.coord_2_metaptr(iter_A)];
-		cout << "T7b" << endl;
-		a_end = metadata[A.coord_2_metaptr(iter_A)+1];
-		cout << "T7c" << endl;
-		b_start = metadata[B.coord_2_metaptr(iter_B)];
-		cout << "T7d" << endl;
-		b_end = metadata[B.coord_2_metaptr(iter_B)+1];
-		cout << "T7e" << endl;
-		auto concat = iter_A.last_concat(iter_B);
-		cout << "T7f" << endl;
+		a_start = metadata[A.coord_2_metaptr(iter_A, true)];
+		a_end   = metadata[A.coord_2_metaptr(iter_A, true)+1];
+		b_start = metadata[B.coord_2_metaptr(iter_B, true)];
+		b_end   = metadata[B.coord_2_metaptr(iter_B, true)+1];
+		auto concat = iter_A.concat(iter_B);
 		dest = (uint32_t)C.coord_2_metaptr(concat);
-		cout << "T7g" << endl;
+		cout << "writing job with"
+			<< " a_start " << a_start
+			<< " a_end "   << a_end
+			<< " b_start " << b_start
+			<< " b_end "   << b_end
+			<< " concat "  << concat
+			<< " dest "    << dest
+		<< endl;
 		jobs.write(job{a_start, a_end, b_start, b_end, dest}); /*
 			metadata[A.coord_2_metaptr(iter_A)],
 			metadata[A.coord_2_metaptr(iter_A)+1],
@@ -95,13 +101,14 @@ void Control::contract() {
 			metadata[B.coord_2_metaptr(iter_B)+1],
 			(uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B))
 		});*/
-		cout << "T7h" << endl;
 		// TODO: destination pointer is probably wrong. Need to think about shape more
 
+		cout << "incrementing from A:" << iter_A << " B:" << iter_B;
 		cont = A.increment(iter_A);
 		if (!cont) {
 			cont = B.increment(iter_B);
 		}
+		cout << "  to  A:" << iter_A << " B:" << iter_B << endl;
 		wait(1, SC_NS);
 	}
 	contract_done.notify();
