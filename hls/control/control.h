@@ -36,13 +36,13 @@ SC_MODULE(Control) {
         , fiber_b_ends("fb_ends", PE_COUNT)
         , destinations("destinations", PE_COUNT)
 		, jobs("jobs", 64)  // TODO: break out into #define
-		, PEs_running("running", PE_COUNT)
 		, metadata("metadata", 1024)
     {
         mem.clk(clk);
 		append_idx = 0;
 
         for (int i = 0; i < PE_COUNT; i++) {
+			PEs_running[i] = false;
             std::string name = "pe";
             name.append(std::to_string(i));
             PE * new_pe = new PE(name.c_str(),
@@ -103,7 +103,7 @@ SC_MODULE(Control) {
         sc_vector<sc_signal<pointer_type>> destinations;
 
 		sc_fifo<job> jobs;
-		sc_vector<sc_signal<bool>> PEs_running;
+		bool PEs_running[PE_COUNT];
 
 		sc_event_or_list PEs_done;
 

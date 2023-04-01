@@ -45,11 +45,11 @@
 #define MEMORY_SIZE 100000
 
 // can't be zero
-#define MEMORY_READ_LATENCY 16
-#define MEMORY_WRITE_LATENCY 16
+#define MEMORY_READ_LATENCY 2
+#define MEMORY_WRITE_LATENCY 3
 
 // can't be zero lol
-#define PE_COUNT 2
+#define PE_COUNT 1
 
 
 

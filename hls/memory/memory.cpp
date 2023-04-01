@@ -15,9 +15,9 @@ void Mem::readyer() {
 void Mem::read_listener() {
     while (true) {
         // check all events in parallel every cycle
-        MODULE_INFO("waiting!");
+        //MODULE_INFO("waiting!");
         wait(mem_read_any);
-        MODULE_INFO("woken up!");
+        //MODULE_INFO("woken up!");
         // check if any events need to be serviced
         for (int i = 0; i < PE_COUNT*2; i++) {
             // if this event is in progress
@@ -29,6 +29,7 @@ void Mem::read_listener() {
                 )
                 read_value[i] = contents[mem_addr];
                 mem_read_done[i].notify(MEMORY_READ_LATENCY, SC_NS);
+				//MODULE_INFO("notified " << i << " that I'm done");
             }
         }
     }
@@ -53,6 +54,12 @@ void Mem::write_listener() {
             }
         }
     }
+}
+
+pointer_type Mem::allocate_fiber(count_type length) {  // returns pointer to allocated entry
+	pointer_type res = append_idx;
+	append_idx += length;
+	return res;
 }
 
 std::tuple<pointer_type,pointer_type> Mem::append_fiber_file(std::string filename) {

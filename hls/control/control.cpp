@@ -42,7 +42,6 @@ void Control::contract() {
 	}
 	wait(1, SC_NS);
 
-	cout << "T1 " << shape_A_arr << " " << order_A << endl;
 	coord shape_A = coord(shape_A_arr, order_A);
 	coord iter_A = coord(order_A-1);
 	tensor A(shape_A, start_A);
@@ -61,56 +60,72 @@ void Control::contract() {
 	// allocate dense denstination :(
 	// TODO: allocate in the correct space in the main tensor storage memory
 	coord iter_C = coord(shape_C.order);
+	coord iter_C_fibers = coord(shape_C.order-1);
+	pointer_type fiber_start;
+	count_type C_fiber_len = shape_C[shape_C.order-1];
 	bool cont = true;
 	while (cont) {
-		metadata[append_idx++] = (uint32_t)C.coord_2_metaptr(iter_C);
-		cont = C.increment(iter_C);
+		// Choose last coordinate as fiber direction, allocate those.
+		// This avoids appending a 1 to the destination shape, but requires forcing
+		// a direction but it's fine because it's dense so reshaping is easy
+		fiber_start = mem.allocate_fiber(C_fiber_len);
+		metadata[append_idx++] = fiber_start;
+		cont = C.increment(iter_C_fibers);
 		wait(1, SC_NS);
 	}
-	cout << "T6" << endl;
+	metadata[append_idx++] = fiber_start + C_fiber_len;  // end of last fiber
+	wait(1, SC_NS);  // wait for that last write to actually happen
+	print_region(0, 20);
 
-	// TODO: combine above and below loops
+	// TODO: combine above and below loops? Iteration order seems different maybe
 
 	// distribute jobs
-	print_region(0, 30);
-	cout << "A tensor is shape " << A.shape << " with start " << A.fibers << endl;
-	cout << "B tensor is shape " << B.shape << " with start " << B.fibers << endl;
-	cout << "C tensor is shape " << C.shape << " with start " << C.fibers << endl;
+	MODULE_INFO("A tensor is shape " << A.shape << " with start " << A.fibers);
+	MODULE_INFO("B tensor is shape " << B.shape << " with start " << B.fibers);
+	MODULE_INFO("C tensor is shape " << C.shape << " with start " << C.fibers);
 	cont = true;
 	while (cont) {
-		// jobdest = iter_A.concat(iter_B);
 		pointer_type a_start, a_end, b_start, b_end, dest;
 		a_start = metadata[A.coord_2_metaptr(iter_A, true)];
 		a_end   = metadata[A.coord_2_metaptr(iter_A, true)+1];
 		b_start = metadata[B.coord_2_metaptr(iter_B, true)];
 		b_end   = metadata[B.coord_2_metaptr(iter_B, true)+1];
-		auto concat = iter_A.concat(iter_B);
-		dest = (uint32_t)C.coord_2_metaptr(concat);
-		cout << "writing job with"
+		auto c_coord = iter_A.concat(iter_B);
+		dest = metadata[C.coord_2_metaptr(c_coord.truncate(c_coord.order-1), true)];
+		dest += c_coord[c_coord.order-1];
+		MODULE_INFO("writing job with"
 			<< " a_start " << a_start
 			<< " a_end "   << a_end
 			<< " b_start " << b_start
 			<< " b_end "   << b_end
-			<< " concat "  << concat
+			<< " c_coord " << c_coord
 			<< " dest "    << dest
-		<< endl;
-		jobs.write(job{a_start, a_end, b_start, b_end, dest}); /*
-			metadata[A.coord_2_metaptr(iter_A)],
-			metadata[A.coord_2_metaptr(iter_A)+1],
-			metadata[B.coord_2_metaptr(iter_B)],
-			metadata[B.coord_2_metaptr(iter_B)+1],
-			(uint32_t)C.coord_2_metaptr(iter_A.concat(iter_B))
-		});*/
-		// TODO: destination pointer is probably wrong. Need to think about shape more
+		);
+		jobs.write(job{a_start, a_end, b_start, b_end, dest});
 
-		cout << "incrementing from A:" << iter_A << " B:" << iter_B;
+		MODULE_INFO("incrementing from A:" << iter_A << " B:" << iter_B << "...");
 		cont = A.increment(iter_A);
 		if (!cont) {
 			cont = B.increment(iter_B);
 		}
-		cout << "  to  A:" << iter_A << " B:" << iter_B << endl;
+		MODULE_INFO("   ...to  A:" << iter_A << " B:" << iter_B);
 		wait(1, SC_NS);
 	}
+	MODULE_INFO("Done generating jobs. Waiting for PEs to take them");
+	// wait until all PEs finish
+	while (true) {
+		if (jobs.num_available() == 0)
+			break;
+		wait(1, SC_NS);
+	}
+	wait(MEMORY_READ_LATENCY, SC_NS);
+	MODULE_INFO("job queue empty. Waiting for PEs to finish")
+	for (int i = 0; i < PE_COUNT; i++) {
+		while (pes[i]->running.read() != false)
+			wait(1, SC_NS);
+		MODULE_INFO("PE " << i << " done");
+	}
+	MODULE_INFO("all PEs seem to be done");
 	contract_done.notify();
 }
 
@@ -121,44 +136,69 @@ void Control::PE_done_watch() {
 	//  - A new job is generated and added to the fifo so execution continues
 	//  - Now the second PE that's ready for a job might not cound as .triggered()?
 	// This scenario requires testing since I don't see it in documentation.
-	// This might be a situation where I should use an sc_event_queue.
+	// This might be a situation where I should use an sc_event_queue?
+	/*
 	while (true) {
 		wait(PEs_done);
 		for (int i = 0; i < PE_COUNT; i++) {
-			if (jobs_done[i].triggered())
+			if (jobs_done[i].triggered() && PEs_running[i])
 				PEs_running[i] = false;
 		}
 	}
+	*//*
+	// round robin assign new jobs as PEs finish
+	while (true) {
+		wait(PEs_done);
+		for (int i = 0; i < PE_COUNT; i++) {
+			if (jobs_done[i].triggered()) {
+				job j = jobs.read(); // blocking here could cause an issue if
+									 // multiple PEs finish in the same tick
+				fiber_a_starts[i].write(j.a_start);
+				fiber_a_ends[i].write(j.a_end);
+				fiber_b_starts[i].write(j.b_start);
+				fiber_b_ends[i].write(j.b_end);
+				destinations[i].write(j.destination);
+				jobs_start[i].notify(1, SC_NS);
+			}
+		}
+	}*/
 }
 
 void Control::distribute_jobs() {
 	// skip initialization phase
-	int idx = 0;
-	wait();
+	wait(1, SC_NS);
+
+	// first, distribute all available jobs
+	for (int i = 0; i < PE_COUNT; i++) {
+		job j = jobs.read();
+		fiber_a_starts[i].write(j.a_start);
+		fiber_a_ends[i].write(j.a_end);
+		fiber_b_starts[i].write(j.b_start);
+		fiber_b_ends[i].write(j.b_end);
+		destinations[i].write(j.destination);
+		wait(1, SC_NS);
+		jobs_start[i].notify();
+	}
+	// This could cause issues if a PE finishes before all jobs have been
+	// distributed in this first round
 
 	// round robin. TODO: maybe make this not be round robin
 	while (true) {
-		if (PEs_running[idx] == true) {
-			idx++;
-			if (idx >= PE_COUNT)
-				idx = 0;
-			wait();
-			continue;
+		wait(PEs_done);
+		for (int i = 0; i < PE_COUNT; i++) {
+			if (jobs_done[i].triggered()) {
+				job j = jobs.read();
+				fiber_a_starts[i].write(j.a_start);
+				fiber_a_ends[i].write(j.a_end);
+				fiber_b_starts[i].write(j.b_start);
+				fiber_b_ends[i].write(j.b_end);
+				destinations[i].write(j.destination);
+				PEs_running[i] = true;
+				wait();
+				wait();
+				jobs_start[i].notify(2, SC_NS);
+			}
 		}
-		job j = jobs.read();
-		fiber_a_starts[idx].write(j.a_start);
-		fiber_a_ends[idx].write(j.a_end);
-		fiber_b_starts[idx].write(j.b_start);
-		fiber_b_ends[idx].write(j.b_end);
-		destinations[idx].write(j.destination);
-		PEs_running[idx] = true;
-		wait();
-		jobs_start[idx].notify();
-
-		idx++;
-		if (idx >= PE_COUNT)
-			idx = 0;
-		wait();
 	}
 }
 
@@ -173,13 +213,14 @@ pointer_type Control::append_tensor_file(std::string filename) {
 	// store tensor order
 	pointer_type order = unpack_pointer(in);
 	metadata[append_idx++] = order;
-	cout << "order is " << order << endl;
+	cout << "Appending tensor from file " << filename << endl;
+	cout << "  order is " << order << endl;
 
 	// store tensor shape
 	pointer_type shape;
 	for (u_int32_t i = 0; i < order; i++) {
 		shape = unpack_pointer(in);
-		cout << "shape is " << shape << endl;
+		cout << "  shape is " << shape << endl;
 		metadata[append_idx++] = shape;
 	}
 
@@ -195,7 +236,7 @@ pointer_type Control::append_tensor_file(std::string filename) {
 
 	// and pointers to those fibers in metadata memory
 	len = unpack_pointer(in);
-	cout << endl << "len is " << len << endl;
+	cout << endl << "  len is " << len << endl;
 	for (int i = 0; i < len; i++) {
 		metadata[append_idx++] = unpack_pointer(in) + fiber_start;
 	}

@@ -28,7 +28,7 @@ SC_MODULE(Control_TB) {
 
 int sc_main(int argc, char * argv[]) {
     Control_TB * tb = new Control_TB("tb");
-    sc_start(500, SC_NS);
+    sc_start(200, SC_NS);
     cout << "Simulation finished after " << sc_time_stamp() << endl;
     delete tb;
     return 0;
@@ -39,6 +39,7 @@ pointer_type Control_TB::append_tensor_file(std::string filename) {
 }
 
 void Control_TB::tb_main() {
+	/*
     count_type shape_arr[3] = {5, 4, 2};
     coord shape = coord(shape_arr, 3);
     tensor A = tensor(shape, 0);
@@ -67,6 +68,7 @@ void Control_TB::tb_main() {
         wait(1, SC_NS);
     }
 	cout << "finished incrementing" << endl;
+	*/
 
 	pointer_type ta = control.append_tensor_file("../test_inputs/fiber_ax2.csfbin");
 	pointer_type tb = control.append_tensor_file("../test_inputs/fiber_ax2.csfbin");
@@ -76,8 +78,9 @@ void Control_TB::tb_main() {
 	wait(1, SC_NS);
 	control.contract_start.notify();
 	wait(control.contract_done);
+	cout << "contract_done was notified" << endl;
 	wait(1, SC_NS);
-	control.print_region(0, control.tensor_C.read()*3);
+	control.print_region(0, 20);
 	control.mem.print_region(0, 50);
 
     sc_stop();

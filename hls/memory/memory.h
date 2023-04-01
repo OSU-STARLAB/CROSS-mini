@@ -24,6 +24,7 @@ SC_MODULE(Mem) {
     void readyer();
     void read_listener();
     void write_listener();
+	pointer_type allocate_fiber(count_type length);  // returns pointer to allocated entry
 
     // simulation-only helper functions
     std::tuple<pointer_type,pointer_type> append_fiber_file(std::string filename);  // returns pointer to start

@@ -4,9 +4,9 @@ void PE::pe_destination_fifo() {
     while (true) {
         MODULE_INFO("waiting on job_start");
         wait(job_start);
-        MODULE_INFO("got a destination: " << destination);
+        MODULE_INFO("got job_start with destination: " << destination);
         destinations.write(destination);
-        result_indices.write(22);
+        result_indices.write(22);  // what is 22? I don't remember writing this
     }
 }
 
@@ -27,4 +27,15 @@ void PE::job_done_notifier() {
         MODULE_INFO("job_done.notify()");
         job_done.notify();
     }
+}
+
+void PE::pe_running_setter() {
+	while (true) {
+		running = false;
+		MODULE_INFO("PE not running");
+		wait(job_start);
+		running = true;
+		MODULE_INFO("PE running");
+		wait(job_done);
+	}
 }
