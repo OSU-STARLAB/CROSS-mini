@@ -15,6 +15,7 @@ SC_MODULE(PE) {
     sc_in<pointer_type> fiber_b_start;
     sc_in<pointer_type> fiber_b_end;
     sc_in<pointer_type> destination;
+	sc_fifo<count_type> result_indices;
     sc_event & job_start;  // control tells us to start
     sc_event & job_done;  // we tell control we're done
 	sc_signal<bool> running;
@@ -50,6 +51,7 @@ SC_MODULE(PE) {
         sc_event & mem_read_b, sc_event & mem_done_b,
         sc_event & mem_write_c, sc_event & mem_done_c
     ) :
+        result_indices("res_idxs", INTERSECTION_FIFO_SIZE),
         job_start(job_start),
         job_done(job_done),
         mem_read_address_a(fetch_a.mem_read_address),
@@ -70,8 +72,7 @@ SC_MODULE(PE) {
         fiber_b("fiber_b", INTERSECTION_FIFO_SIZE),
         ixn("ixn"),
         result_values("res_vals", INTERSECTION_FIFO_SIZE),
-        result_indices("res_idxs", INTERSECTION_FIFO_SIZE),
-        result_combined("res_comb", 1),
+        result_combined("res_comb", 3),
         store("store", mem_write_c, mem_done_c)
     {
         // clock and reset
@@ -117,7 +118,6 @@ SC_MODULE(PE) {
         sc_fifo<fiber_entry> fiber_a, fiber_b;
         Intersection ixn;
         sc_fifo<tensor_element> result_values;
-        sc_fifo<count_type> result_indices;
         sc_fifo<fiber_entry> result_combined;
         Store store;
         sc_fifo<pointer_type> destinations;

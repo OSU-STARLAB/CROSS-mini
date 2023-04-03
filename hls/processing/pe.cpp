@@ -6,7 +6,6 @@ void PE::pe_destination_fifo() {
         wait(job_start);
         MODULE_INFO("got job_start with destination: " << destination);
         destinations.write(destination);
-        result_indices.write(22);  // what is 22? I don't remember writing this
     }
 }
 

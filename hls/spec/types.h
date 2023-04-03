@@ -98,6 +98,7 @@ struct job {
 	pointer_type b_start;
 	pointer_type b_end;
 	pointer_type destination;
+	count_type dest_idx;
 
     friend std::ostream & operator<< (std::ostream & os, const job & j);
 };

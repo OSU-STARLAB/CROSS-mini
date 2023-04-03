@@ -40,5 +40,6 @@ void sc_trace(sc_trace_file *& f, const job & j, std::string & name) {
     sc_trace(f, j.b_start, name+".b_start");
     sc_trace(f, j.b_end, name+".b_end");
     sc_trace(f, j.destination, name+".dest");
+	sc_trace(f, j.dest_idx, name+".dest_idx");
     std::stringstream _temp_ss;
 }
