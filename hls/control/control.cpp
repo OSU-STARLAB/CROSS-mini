@@ -90,16 +90,11 @@ void Control::contract() {
 		a_end   = metadata[A.coord_2_metaptr(iter_A, true)+1];
 		b_start = metadata[B.coord_2_metaptr(iter_B, true)];
 		b_end   = metadata[B.coord_2_metaptr(iter_B, true)+1];
-/*<<<<<<< HEAD
 		auto c_coord = iter_A.concat(iter_B);
 		dest = metadata[C.coord_2_metaptr(c_coord.truncate(c_coord.order-1), true)];
 		dest += c_coord[c_coord.order-1];
-		MODULE_INFO("writing job with"
-=======*/
-		auto c_coord = iter_A.concat(iter_B);
-		dest = (uint32_t)C.coord_2_metaptr(c_coord);
 		count_type dest_idx = c_coord[c_coord.order-1];
-		cout << "writing job with"
+		MODULE_INFO("writing job with"
 			<< " a_start " << a_start
 			<< " a_end "   << a_end
 			<< " b_start " << b_start
@@ -107,7 +102,7 @@ void Control::contract() {
 			<< " c_coord " << c_coord
 			<< " dest "    << dest
 			<< " dest_idx "<< dest_idx
-		<< endl;
+		);
 		jobs.write(job{a_start, a_end, b_start, b_end, dest, dest_idx});
 
 		MODULE_INFO("incrementing from A:" << iter_A << " B:" << iter_B << "...");
@@ -183,6 +178,7 @@ void Control::distribute_jobs() {
 		fiber_b_starts[i].write(j.b_start);
 		fiber_b_ends[i].write(j.b_end);
 		destinations[i].write(j.destination);
+		pes[i]->result_indices.write(j.dest_idx);
 		wait(1, SC_NS);
 		jobs_start[i].notify();
 	}
@@ -191,7 +187,6 @@ void Control::distribute_jobs() {
 
 	// round robin. TODO: maybe make this not be round robin
 	while (true) {
-//<<<<<<< HEAD
 		wait(PEs_done);
 		for (int i = 0; i < PE_COUNT; i++) {
 			if (jobs_done[i].triggered()) {
@@ -201,31 +196,12 @@ void Control::distribute_jobs() {
 				fiber_b_starts[i].write(j.b_start);
 				fiber_b_ends[i].write(j.b_end);
 				destinations[i].write(j.destination);
-				PEs_running[i] = true;
+				pes[i]->result_indices.write(j.dest_idx);
 				wait();
 				wait();
 				jobs_start[i].notify(2, SC_NS);
 			}
 		}
-/*=======
-		if (PEs_running[idx] == false) {
-			job j = jobs.read();
-			fiber_a_starts[idx].write(j.a_start);
-			fiber_a_ends[idx].write(j.a_end);
-			fiber_b_starts[idx].write(j.b_start);
-			fiber_b_ends[idx].write(j.b_end);
-			destinations[idx].write(j.destination);
-			pes[idx]->result_indices.write(j.dest_idx);
-			PEs_running[idx] = true;
-			wait();
-			jobs_start[idx].notify(2, SC_NS);
-		}
-
-		idx++;
-		if (idx >= PE_COUNT)
-			idx = 0;
-		wait();
->>>>>>> 32f4634 (PEs know when done and notify control unit. Start on destination index)*/
 	}
 }
 
