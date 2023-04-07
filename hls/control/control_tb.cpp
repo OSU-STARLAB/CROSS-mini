@@ -79,7 +79,9 @@ void Control_TB::tb_main() {
 	control.contract_start.notify();
 	wait(control.contract_done);
 	cout << "contract_done was notified" << endl;
+	pointer_type tc = control.tensor_C.read();
 	wait(1, SC_NS);
+	control.extract_tensor_file("../test_outputs/out.csfbin", tc);
 	control.print_region(0, 20);
 	control.mem.print_region(0, 50);
 

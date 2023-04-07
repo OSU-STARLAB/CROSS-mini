@@ -5,24 +5,6 @@ void Control::main () {
 
 }
 
-pointer_type unpack_pointer(std::ifstream & in) {
-	u_int32_t dest;
-	in.read(reinterpret_cast<char*>(&dest), 4);
-	pointer_type p = dest;
-	return p;
-}
-
-fiber_entry unpack_fiber_entry(std::ifstream & in) {
-	u_int32_t index;
-	float value;
-	in.read(reinterpret_cast<char*>(&index), 4);
-	in.read(reinterpret_cast<char*>(&value), 4);
-	fiber_entry f;
-	f.index = index;
-	f.value = value;
-	return f;
-}
-
 void Control::contract() {
 	pointer_type start_A = tensor_A.read();
 	count_type shape_A_arr[MAX_ORDER];
@@ -52,6 +34,7 @@ void Control::contract() {
 
 	coord shape_C = shape_A.last_contract(shape_B);
 	tensor C(shape_C, append_idx);
+	tensor_C.write(append_idx);  // set module output to metadata pointer for C
 	metadata[append_idx++] = (uint32_t)shape_C.order;
 	for (pointer_type i = 0; (long long int)i < shape_C.order; i++) {
 		metadata[append_idx++] = (uint32_t)shape_C[i];
@@ -205,6 +188,24 @@ void Control::distribute_jobs() {
 	}
 }
 
+pointer_type unpack_pointer(std::ifstream & in) {
+	u_int32_t dest;
+	in.read(reinterpret_cast<char*>(&dest), 4);
+	pointer_type p = dest;
+	return p;
+}
+
+fiber_entry unpack_fiber_entry(std::ifstream & in) {
+	u_int32_t index;
+	float value;
+	in.read(reinterpret_cast<char*>(&index), 4);
+	in.read(reinterpret_cast<char*>(&value), 4);
+	fiber_entry f;
+	f.index = index;
+	f.value = value;
+	return f;
+}
+
 pointer_type Control::append_tensor_file(std::string filename) {
 	std::ifstream in;
 	in.open(filename, ios::binary);
@@ -245,6 +246,44 @@ pointer_type Control::append_tensor_file(std::string filename) {
 	}
 	in.close();
 	return start;
+}
+
+void pack_pointer(std::ofstream & out, pointer_type value) {
+	u_int32_t val = value;
+	out.write(reinterpret_cast<char*>(&val), 4);
+}
+
+void pack_fiber_entry(std::ofstream & out, fiber_entry values) {
+	u_int32_t idx = values.index;
+	float val = values.value;
+	out.write(reinterpret_cast<char*>(&idx), 4);
+	out.write(reinterpret_cast<char*>(&val), 4);
+}
+
+void Control::extract_tensor_file(std::string filename, pointer_type metadata_start) {
+	std::ofstream out;
+	out.open(filename, ios::binary);
+	if (!out.is_open()) {
+		perror(filename.c_str());
+		exit(1);
+	}
+	auto idx = metadata_start;
+	pointer_type order = metadata[idx++];
+	pointer_type shape_arr[MAX_ORDER];
+	pack_pointer(out, order);
+	u_int32_t fiber_ptr_count = 1;
+	for (u_int32_t i = 0; i < order; i++) {
+		shape_arr[i] = metadata[idx++];
+		pack_pointer(out, shape_arr[i]);
+		if (i != order-1)
+			fiber_ptr_count *= shape_arr[i];
+		else
+			fiber_ptr_count++;
+	}
+	pack_pointer(out, fiber_ptr_count); // on-disk format has this extra value to make reading easier
+	coord shape(reinterpret_cast<sc_int<32>*>(shape_arr), (sc_int<32>)order);
+	tensor C(shape, metadata_start);
+	out.close();
 }
 
 void Control::print_region(pointer_type start, pointer_type end) {

@@ -12,6 +12,7 @@ SC_MODULE(Control) {
 	// simulation-only helpers
 	// returns pointer to start of tensor metadata
 	pointer_type append_tensor_file(std::string filename);
+	void extract_tensor_file(std::string filename, pointer_type metadata_tensor_start);
 	void print_region(pointer_type start, pointer_type end);
 
 	// input pointers, output pointer
