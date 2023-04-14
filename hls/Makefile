@@ -4,9 +4,10 @@ CXX = g++ -Wall -g
 OBJDIR=build
 SRC=fetch.cpp intersection.cpp store.cpp
 OBJ=$(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))
+SIM_EXE=accel_sim
 
-run: tb_control
-	./tb_control
+$(SIM_EXE): tb_control
+	cp $< $@
 
 # Executables
 tb_control: control/control_tb.cpp $(COMMON_DEPS) control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
@@ -43,6 +44,7 @@ $(OBJDIR)/memory.o: memory/$(OBJDIR)/memory.o
 # Utility
 .PHONY: clean
 clean:
+	rm -rf $(SIM_EXE)
 	rm -rf $(OBJDIR)
 	rm -f a.out *.o tb_control tb_mem tb_pe
 	$(MAKE) -C processing clean

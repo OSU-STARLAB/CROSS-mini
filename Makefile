@@ -1,5 +1,9 @@
 SRC_DIR=hls
 THREADS=`nproc`
+SIM_EXE=accel_sim
+
+$(SIM_EXE): all
+	cp $(SRC_DIR)/$@ $@
 
 .PHONY: all
 all:
@@ -7,6 +11,7 @@ all:
 
 .PHONY: clean
 clean:
+	rm -f $(SIM_EXE)
 	rm -f *.log
 	rm -rf test_outputs
 	cd $(SRC_DIR) && $(MAKE) clean
