@@ -75,17 +75,18 @@ class Tensor(csr_matrix):
         Contract two sparse tensors by offloading to accelerator
         """
         assert isinstance(rhs, Tensor)
-        fname_lhs = "driver-lhs.csfbin"
-        fname_rhs = "driver-rhs.csfbin"
-        fname_res = "driver-res.csfbin"
+        name_lhs = "driver-lhs.csfbin"
+        name_rhs = "driver-rhs.csfbin"
+        name_res = "driver-res.csfbin"
         # serialize self
-        self.to_file(fname_lhs)
+        self.to_file(name_lhs)
         # serialize rhs
-        rhs.to_file(fname_rhs)
+        rhs.to_file(name_rhs)
         # construct system() call
-        log = subprocess.check_output([SIM_EXE, fname_lhs, fname_rhs, fname_res])
-        print(log.rsplit('\n', maxsplit=1)[-1])
-        result = Tensor(filename=fname_res)
+        log = subprocess.check_output([SIM_EXE, name_lhs, name_rhs, name_res])
+        print(log.decode('UTF-8'))
+        print(log.rsplit(b'\n', maxsplit=2)[-2])
+        result = Tensor(filename=name_res)
         return result
 
     def __str__(self):
@@ -95,12 +96,12 @@ class Tensor(csr_matrix):
 def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
     """
     Read a single fiber from a file as a column of a sparse matrix.
-	The result is a sparse CSR matrix with shape (repeat, fiber_len)
+    The result is a sparse CSR matrix with shape (repeat, fiber_len)
 
-	filename:  The .csf file to read
-	repeat:    How many times to repeat this column?
-	fiber_len: How long is the column? It's sparse, so default is to assume
-	           the last index is the highest one, but it could be higher.
+    filename:  The .csf file to read
+    repeat:    How many times to repeat this column?
+    fiber_len: How long is the column? It's sparse, so default is to assume
+               the last index is the highest one, but it could be higher.
     """
     with open(filename, "r", encoding="UTF-8") as file:
         # gobble header with column names
@@ -109,7 +110,7 @@ def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
         pairs = [line.split(',') for line in file]
         # grab first of each pair as coord and second as data
         coords_single = [int(p[0]) for p in pairs]
-		# fit matrix height to data if length unspecified
+        # fit matrix height to data if length unspecified
         if fiber_len < 1:
             fiber_len = max(coords_single) + 1
         coords = ([], coords_single * repeat)
@@ -123,10 +124,15 @@ def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
 
 
 if __name__ == "__main__":
-    T = read_csf_file_repeat("../test_inputs/fiber_a.csf", 2)
-    print(T)
-    print("\npacked form:")
-    print(T.serialize().hex())
-    with open("../test_inputs/fiber_ax2.csfbin", "wb") as f:
-        f.write(T.serialize())
-    print(Tensor(filename="../test_inputs/fiber_ax2.csfbin"))
+    A = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
+    B = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
+    C = A.contract_last(B)
+    print(C)
+
+    # T = read_csf_file_repeat("../test_inputs/fiber_a.csf", 2)
+    # print(T)
+    # print("\npacked form:")
+    # print(T.serialize().hex())
+    # with open("../test_inputs/fiber_ax2.csfbin", "wb") as f:
+    #     f.write(T.serialize())
+    # print(Tensor(filename="../test_inputs/fiber_ax2.csfbin"))

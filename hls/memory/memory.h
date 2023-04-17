@@ -21,6 +21,9 @@ SC_MODULE(Mem) {
     sc_vector<sc_event> mem_write;
     sc_vector<sc_event> mem_write_done;
 
+	// actual memory contents. C++ vector since it's for simulation
+	std::vector<sc_signal<fiber_entry>> contents;
+
     void readyer();
     void read_listener();
     void write_listener();
@@ -61,8 +64,4 @@ SC_MODULE(Mem) {
         SC_THREAD(write_listener);
         sensitive << clk.pos();
     }
-
-    private:
-        // actual memory contents. C++ vector since it's for simulation
-        std::vector<sc_signal<fiber_entry>> contents;
 };

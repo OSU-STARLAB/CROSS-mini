@@ -271,18 +271,48 @@ void Control::extract_tensor_file(std::string filename, pointer_type metadata_st
 	pointer_type order = metadata[idx++];
 	pointer_type shape_arr[MAX_ORDER];
 	pack_pointer(out, order);
-	u_int32_t fiber_ptr_count = 1;
+	// Step through shape counting expected fiber pointers.
+	// Also save the shape to the file
+	// Since output is dense, tensor volume is entry count
+	// (this block would need to change to support sparse results)
+	// (I expect that change to not be very difficult)
+	int32_t entry_count = 1;
 	for (u_int32_t i = 0; i < order; i++) {
 		shape_arr[i] = metadata[idx++];
 		pack_pointer(out, shape_arr[i]);
+
 		if (i != order-1)
-			fiber_ptr_count *= shape_arr[i];
-		else
-			fiber_ptr_count++;
+			entry_count *= shape_arr[i];
 	}
-	pack_pointer(out, fiber_ptr_count); // on-disk format has this extra value to make reading easier
-	coord shape(reinterpret_cast<sc_int<32>*>(shape_arr), (sc_int<32>)order);
-	tensor C(shape, metadata_start);
+	int32_t fiber_ptr_count = entry_count + 1;
+	entry_count *= shape_arr[order-1];
+	// number of entries total
+	pack_pointer(out, entry_count);
+
+	cout <<"ptr cnt " << fiber_ptr_count;
+	cout << " entries " << entry_count << endl;
+
+	// actual entries, while saving fiber boundries
+	std::vector<pointer_type> fiber_bounds;
+	pointer_type offset = metadata[idx];
+	for (u_int32_t i = 0; i < fiber_ptr_count-1; i++) {
+		pointer_type start = metadata[idx++];
+		pointer_type end = metadata[idx];
+		fiber_bounds.push_back(start-offset);
+		for (u_int32_t j = start; j < end; j++) {
+			pack_fiber_entry(out, mem.contents[j]);
+		}
+	}
+	fiber_bounds.push_back(pointer_type(metadata[idx])-offset);
+
+	// number of fiber boundary pointers
+	cout << "fiber_bounds.size() = " << fiber_bounds.size() << endl;
+	pack_pointer(out, pointer_type(fiber_bounds.size()));
+
+	// actual fiber boundary pointers
+	for (auto ptr : fiber_bounds) {
+		pack_pointer(out, ptr);
+	}
 	out.close();
 }
 

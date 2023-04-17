@@ -2,16 +2,13 @@ COMMON_DEPS = spec/*
 CXX = g++ -Wall -g
 
 OBJDIR=build
-SRC=fetch.cpp intersection.cpp store.cpp
+#SRC=fetch.cpp intersection.cpp store.cpp
 OBJ=$(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))
 SIM_EXE=accel_sim
 
-$(SIM_EXE): tb_control
-	cp $< $@
-
 # Executables
-tb_control: control/control_tb.cpp $(COMMON_DEPS) control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
-	$(CXX) -lsystemc -o $@ control/control_tb.cpp control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
+$(SIM_EXE): $(COMMON_DEPS) top.cpp control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
+	$(CXX) -lsystemc -o $@ top.cpp control/control.cpp $(OBJDIR)/memory.o $(OBJDIR)/pe.o $(OBJDIR)/types.o
 
 #tb_mem: main.cpp memory/memory_tb.cpp $(COMMON_DEPS) $(OBJDIR)/types.o $(OBJDIR)/memory.o
 #	$(CXX) -lsystemc -o $@ memory/memory_tb.cpp $(OBJDIR)/memory.o types.o
