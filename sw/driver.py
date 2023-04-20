@@ -6,11 +6,12 @@ functions and types for interacting with accelerator sim
 import struct
 import subprocess
 from itertools import starmap
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, random
 
 TensorElement = float
 
 SIM_EXE = "../accel_sim"
+BASELINE_EXE = "./baseline.py"
 
 # little endian uint32
 def _ptrpacker(data):
@@ -70,9 +71,9 @@ class Tensor(csr_matrix):
         with open(filename, "wb") as file:
             file.write(self.serialize())
 
-    def contract_last(self, rhs):
+    def contract_last(self, rhs, sim=True, show_log=False):
         """
-        Contract two sparse tensors by offloading to accelerator
+        Contract two sparse tensors by offloading to backend: sim or baseline
         """
         assert isinstance(rhs, Tensor)
         name_lhs = "driver-lhs.csfbin"
@@ -82,12 +83,23 @@ class Tensor(csr_matrix):
         self.to_file(name_lhs)
         # serialize rhs
         rhs.to_file(name_rhs)
+
+        # decide if we're actually gonna run the sim or just use scipy
+        BACKEND = SIM_EXE if sim else BASELINE_EXE
+
         # construct system() call
-        log = subprocess.check_output([SIM_EXE, name_lhs, name_rhs, name_res])
-        print(log.decode('UTF-8'))
-        print(log.rsplit(b'\n', maxsplit=2)[-2])
+        log = subprocess.check_output(
+                [BACKEND, name_lhs, name_rhs, name_res],
+                env={"SYSTEMC_DISABLE_COPYRIGHT_MESSAGE": "1"})
+
+        # get runtime from last line of backend output
+        time_report = log.rsplit(b'\n', maxsplit=2)[-2]
+        ns = int(time_report.rsplit(b' ', maxsplit=3)[-2])
+        if show_log:
+            print(log.decode('UTF-8'))
+            print("backend took", ns, "ns")
         result = Tensor(filename=name_res)
-        return result
+        return result, ns
 
     def __str__(self):
         return f"data {self.data}\nindices {self.indices}\nindptr {self.indptr}"
@@ -123,11 +135,20 @@ def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
         return Tensor((data*repeat, coords), shape=(repeat, fiber_len))
 
 
+# Just a quick test to make sure everything is working. Also demonstrates usage
 if __name__ == "__main__":
-    A = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
-    B = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
-    C = A.contract_last(B)
-    print(C)
+    print("Driver test:")
+    # A = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
+    # B = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
+    A = Tensor(random(5, 10, density=0.9, format='csr'))
+    B = Tensor(random(5, 10, density=0.9, format='csr'))
+    C = A.contract_last(B, show_log=True)
+    C[0].sort_indices()
+    print(*C, "ns")
+    C_2 = A.contract_last(B, sim=False)
+    C_2[0].sort_indices()
+    print(*C_2, "ns")
+    # assert not (C[0] != C_2[0]).any()
 
     # T = read_csf_file_repeat("../test_inputs/fiber_a.csf", 2)
     # print(T)
