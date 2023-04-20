@@ -32,13 +32,33 @@ int sc_main(int argc, char * argv[]) {
 		cout << "Inputs are contracted along their final dimensions." << endl;
 		return 1;
 	}
-    Top * top = new Top("top");
+	Top * top;
+	try {
+		top = new Top("top");
+	} catch (std::exception& e) {
+		SC_REPORT_ERROR(1,(std::string(e.what())+" Please fix elaboration errors and retry.").c_str());
+	    return 1;
+	} catch (...) {
+	    SC_REPORT_ERROR(1,"Caught exception during elaboration");
+		return 1;
+	}
 	top->filename_lhs = argv[1];
 	top->filename_rhs = argv[2];
 	top->filename_res = argv[3];
-    sc_start(10000, SC_NS);
-    cout << "Simulation finished after " << sc_time_stamp() << endl;
-    delete top;
+	try {
+	    sc_start(10000, SC_NS);
+	} catch (std::exception& e) {
+		SC_REPORT_WARNING(1,(std::string("Caught exception ")+e.what()).c_str());
+	} catch (...) {
+		SC_REPORT_ERROR(1,"Caught exception during simulation.");
+	}
+	if (not sc_end_of_simulation_invoked()) {
+		cout << "Simulation stopped without explicit sc_stop()" << endl;
+		sc_stop();
+		cout << "sc_stop() called" << endl;
+	}
+	double elapsed_ps = sc_time_stamp().to_double(); // default unit is picoseconds
+    cout << "Simulation finishes in " << elapsed_ps/1000 << " ns" << endl;
     return 0;
 }
 
