@@ -7,3 +7,4 @@ tb_pe
 a.out
 build
 __pycache__
+sw/*.csfbin
