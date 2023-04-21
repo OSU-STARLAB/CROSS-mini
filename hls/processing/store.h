@@ -4,13 +4,13 @@
 SC_MODULE(Store) {
     sc_in<bool> rst;
     sc_in<bool> clk;
-    
+
     // connection with control unit
-    sc_fifo_in<pointer_type> destination;
-    
+    sc_fifo_in<pointer_type> destinations;
+
     // connection with intersection unit
     sc_fifo_in<fiber_entry> results;
-    
+
     // connection with memory unit
     //     request
     sc_in<bool> mem_ready;
@@ -19,9 +19,9 @@ SC_MODULE(Store) {
     sc_event & mem_write;
     //     response
     sc_event & mem_done;
-    
+
     void store_main();
-    
+
     SC_HAS_PROCESS(Store);
     Store (sc_module_name name, sc_event & mem_write, sc_event & mem_done) :
         mem_write(mem_write),

@@ -35,7 +35,7 @@ SC_MODULE(Control) {
         , fiber_a_ends("fa_ends", PE_COUNT)
         , fiber_b_starts("fb_starts", PE_COUNT)
         , fiber_b_ends("fb_ends", PE_COUNT)
-        , destinations("destinations", PE_COUNT)
+        //, destinations("destinations", PE_COUNT)
 		, jobs("jobs", 64)  // TODO: break out into #define
 		, metadata("metadata", 1024)
     {
@@ -60,7 +60,7 @@ SC_MODULE(Control) {
             new_pe->fiber_a_end(fiber_a_ends[i]);
             new_pe->fiber_b_start(fiber_b_starts[i]);
             new_pe->fiber_b_end(fiber_b_ends[i]);
-            new_pe->destination(destinations[i]);
+            //new_pe->destination(destinations[i]);
 
             new_pe->mem_ready(mem.ready);
 
@@ -101,7 +101,7 @@ SC_MODULE(Control) {
         sc_vector<sc_signal<pointer_type>> fiber_a_ends;
         sc_vector<sc_signal<pointer_type>> fiber_b_starts;
         sc_vector<sc_signal<pointer_type>> fiber_b_ends;
-        sc_vector<sc_signal<pointer_type>> destinations;
+        //sc_vector<sc_signal<pointer_type>> destinations;
 
 		sc_fifo<job> jobs;
 		bool PEs_running[PE_COUNT];

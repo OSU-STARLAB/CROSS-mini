@@ -30,7 +30,7 @@ void Intersection::intersection_main() {
                     fiber_a.num_available() == 0 &&
                     fiber_b.num_available() != 0) {
                 // flush b FIFOs
-                ent_a = fiber_a.read();
+                ent_b = fiber_b.read();
                 MODULE_INFO("flushing b");
                 if (ent_a.index == ent_b.index) {
                     MODULE_INFO("surprise collision!");
@@ -50,7 +50,9 @@ void Intersection::intersection_main() {
                 ent_a = fiber_entry(-1, 0);
                 ent_b = fiber_entry(-1, 0);
                 MODULE_INFO("standing by to re-initialize");
-            }
+            } else {
+				MODULE_INFO("what is this state?");
+			}
         }
 
         // check for intersection
@@ -111,7 +113,7 @@ void Intersection::intersection_main() {
                 MODULE_INFO("just received ent_a = " << ent_a);
                 just_read = true;
             }
-            if (done_a) {
+            if (done_a && !fiber_a.num_available()) {
                 MODULE_INFO("...but it's done");
                 just_read = false;
             }
@@ -123,7 +125,7 @@ void Intersection::intersection_main() {
                 MODULE_INFO("just received ent_b = " << ent_b);
                 just_read = true;
             }
-            if (done_b) {
+            if (done_b && !fiber_b.num_available()) {
                 MODULE_INFO("...but it's done");
                 just_read = false;
             }

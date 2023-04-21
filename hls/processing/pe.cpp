@@ -4,8 +4,8 @@ void PE::pe_destination_fifo() {
     while (true) {
         MODULE_INFO("waiting on job_start");
         wait(job_start);
-        MODULE_INFO("got job_start with destination: " << destination);
-        destinations.write(destination);
+        MODULE_INFO("got job_start");// with destination: " << destination);
+        //destinations.write(destination);
     }
 }
 

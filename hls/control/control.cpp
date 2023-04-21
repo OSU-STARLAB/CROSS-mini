@@ -161,11 +161,11 @@ void Control::distribute_jobs() {
 		fiber_a_ends[i].write(j.a_end);
 		fiber_b_starts[i].write(j.b_start);
 		fiber_b_ends[i].write(j.b_end);
-		destinations[i].write(j.destination);
+		pes[i]->destinations.write(j.destination);
 		pes[i]->result_indices.write(j.dest_idx);
-		wait(1, SC_NS);
-		jobs_start[i].notify();
+		jobs_start[i].notify(1, SC_NS);
 		MODULE_INFO("Job sent to pe"<<i<<" with dest "<<j.destination);
+		wait(1, SC_NS);
 	}
 	// This could cause issues if a PE finishes before all jobs have been
 	// distributed in this first round
@@ -180,11 +180,11 @@ void Control::distribute_jobs() {
 				fiber_a_ends[i].write(j.a_end);
 				fiber_b_starts[i].write(j.b_start);
 				fiber_b_ends[i].write(j.b_end);
-				destinations[i].write(j.destination);
+				pes[i]->destinations.write(j.destination);
 				pes[i]->result_indices.write(j.dest_idx);
-				wait(1, SC_NS);
-				jobs_start[i].notify();
+				jobs_start[i].notify(1, SC_NS);
 				MODULE_INFO("Job sent to pe"<<i<<" with dest "<<j.destination);
+				wait(1, SC_NS);
 			}
 		}
 	}

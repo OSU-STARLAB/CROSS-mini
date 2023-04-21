@@ -5,7 +5,7 @@ void Store::store_main() {
 
     while (true) {
         mem_write_value = results.read();
-        mem_write_address = destination.read();
+        mem_write_address = destinations.read();
 
         do wait(); while (!mem_ready);  // ensure at least one cycle
         MODULE_INFO("notifying");
