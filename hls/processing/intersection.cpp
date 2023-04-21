@@ -11,7 +11,7 @@ void Intersection::intersection_main() {
     wait();  // end initialization
 
     while (true) {
-        MODULE_INFO("accumulator is " << accumulator);
+        MODULE_INFO("accumulator is " << accumulator << " just_read is " << just_read);
         // check if we're done
         if (!just_read) {
             if (done_b &&
@@ -20,8 +20,9 @@ void Intersection::intersection_main() {
                 // flush a FIFOs
                 ent_a = fiber_a.read();
                 MODULE_INFO("flushing a");
-                if (ent_a.index != ent_b.index) {
+                if (ent_a.index == ent_b.index) {
                     MODULE_INFO("surprise collision!");
+					just_read = true;
                     continue;
                 }
             }
@@ -31,8 +32,9 @@ void Intersection::intersection_main() {
                 // flush b FIFOs
                 ent_a = fiber_a.read();
                 MODULE_INFO("flushing b");
-                if (ent_a.index != ent_b.index) {
+                if (ent_a.index == ent_b.index) {
                     MODULE_INFO("surprise collision!");
+					just_read = true;
                     continue;
                 }
             }
@@ -61,18 +63,18 @@ void Intersection::intersection_main() {
                 << "acc += " << ent_a.value << " * " << ent_b.value
                 << "  -->  " << accumulator);
 
-			if (just_read && done_a && done_b &&
-					fiber_a.num_available() == 0 &&
-					fiber_b.num_available() == 0) {
-				just_read = false;
-				continue;
-			}
-			just_read = false;
-			/*if (just_read) {
-				just_read = false;
-				wait();
-				continue;
-			}*/
+            if (just_read && done_a && done_b &&
+                    fiber_a.num_available() == 0 &&
+                    fiber_b.num_available() == 0) {
+                just_read = false;
+                continue;
+            }
+            just_read = false;
+            /*if (just_read) {
+                just_read = false;
+                wait();
+                continue;
+            }*/
 
             // advance either fiber (there must be an easier way to do this)
             //   (or initialize if just started)
@@ -92,13 +94,13 @@ void Intersection::intersection_main() {
                     //MODULE_INFO("waiting for either fiber");
                     wait();
                 }
-				/*
-				if (done_a && done_b &&
-						fiber_a.num_available() == 0 &&
-						fiber_b.num_available() == 0) {
-					MODULE_INFO("both fetchers done");
-					break;
-				}*/
+                /*
+                if (done_a && done_b &&
+                        fiber_a.num_available() == 0 &&
+                        fiber_b.num_available() == 0) {
+                    MODULE_INFO("both fetchers done");
+                    break;
+                }*/
             } while (!just_read);
             //MODULE_INFO("exited loop");
 
@@ -109,6 +111,10 @@ void Intersection::intersection_main() {
                 MODULE_INFO("just received ent_a = " << ent_a);
                 just_read = true;
             }
+            if (done_a) {
+                MODULE_INFO("...but it's done");
+                just_read = false;
+            }
 
         } else if (ent_a.index > ent_b.index){
             // advance only b
@@ -116,6 +122,10 @@ void Intersection::intersection_main() {
             if (fiber_b.nb_read(ent_b)) {
                 MODULE_INFO("just received ent_b = " << ent_b);
                 just_read = true;
+            }
+            if (done_b) {
+                MODULE_INFO("...but it's done");
+                just_read = false;
             }
 
         } else {

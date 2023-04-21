@@ -46,7 +46,7 @@ int sc_main(int argc, char * argv[]) {
 	top->filename_rhs = argv[2];
 	top->filename_res = argv[3];
 	try {
-	    sc_start(10000, SC_NS);
+	    sc_start(1000000, SC_NS);
 	} catch (std::exception& e) {
 		SC_REPORT_WARNING(1,(std::string("Caught exception ")+e.what()).c_str());
 	} catch (...) {

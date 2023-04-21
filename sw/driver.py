@@ -5,6 +5,7 @@ functions and types for interacting with accelerator sim
 
 import struct
 import subprocess
+import os
 from itertools import starmap
 from scipy.sparse import csr_matrix, random
 
@@ -12,15 +13,25 @@ TensorElement = float
 
 SIM_EXE = "../accel_sim"
 BASELINE_EXE = "./baseline.py"
+FILE_LHS = "temp-lhs.csfbin"
+FILE_RHS = "temp-rhs.csfbin"
+FILE_RES = "temp-res.csfbin"
+
 
 # little endian uint32
 def _ptrpacker(data):
     return b''.join(map(struct.Struct("<I").pack, data))
+
+
 def _ptrunpacker(data):
     return struct.Struct("<I").unpack(data)[0]
+
+
 # little endian int32, float
 def _entrypacker(indices, data):
     return b''.join(starmap(struct.Struct("<if").pack, zip(indices, data)))
+
+
 def _entryunpacker(data):
     return struct.Struct("<if").unpack(data)
 
@@ -42,7 +53,20 @@ class Tensor(csr_matrix):
                 ptr_count = _ptrunpacker(file.read(4))
                 ptrs = list(map(_ptrunpacker, [file.read(4) for _ in range(ptr_count)]))
                 (indices, data) = zip(*entries)
+                # fix up empty jobs
+                # indices = list(_indices)
+                # if indices[0] == -1:
+                #     indices[0] = 0
+                # if indices[-1] == -1:
+                #     indices[-1] = indices[-2] + 1
+                # for i in range(1, len(indices)-1):
+                #     if indices[i] == -1:
+                #         if indices[i+1] == 1:
+                #             indices[i] = 0
+                #         else:
+                #             indices[i] = indices[i-1] + 1
                 super().__init__((data, indices, ptrs), shape=shape)
+                # self.eliminate_zeros()
         else:
             super().__init__(*args, **kwargs)
 
@@ -76,30 +100,36 @@ class Tensor(csr_matrix):
         Contract two sparse tensors by offloading to backend: sim or baseline
         """
         assert isinstance(rhs, Tensor)
-        name_lhs = "driver-lhs.csfbin"
-        name_rhs = "driver-rhs.csfbin"
-        name_res = "driver-res.csfbin"
         # serialize self
-        self.to_file(name_lhs)
+        self.to_file(FILE_LHS)
         # serialize rhs
-        rhs.to_file(name_rhs)
+        rhs.to_file(FILE_RHS)
 
         # decide if we're actually gonna run the sim or just use scipy
-        BACKEND = SIM_EXE if sim else BASELINE_EXE
+        backend = SIM_EXE if sim else BASELINE_EXE
 
         # construct system() call
+        if os.path.exists(FILE_RES):
+            os.unlink(FILE_RES)
         log = subprocess.check_output(
-                [BACKEND, name_lhs, name_rhs, name_res],
+                [backend, FILE_LHS, FILE_RHS, FILE_RES],
                 env={"SYSTEMC_DISABLE_COPYRIGHT_MESSAGE": "1"})
 
+        if show_log:
+            print('\n'.join(log.decode('UTF-8').rsplit('\n', maxsplit=100)[-99:]))
         # get runtime from last line of backend output
         time_report = log.rsplit(b'\n', maxsplit=2)[-2]
-        ns = int(time_report.rsplit(b' ', maxsplit=3)[-2])
+        elapsed_ns = int(float(time_report.rsplit(b' ', maxsplit=3)[-2]))
         if show_log:
-            print(log.decode('UTF-8'))
-            print("backend took", ns, "ns")
-        result = Tensor(filename=name_res)
-        return result, ns
+            print("backend took", elapsed_ns, "ns")
+
+        if os.path.exists(FILE_RES):
+            result = Tensor(filename=FILE_RES)
+            result.sort_indices()  # make results easier to compare
+            return result, elapsed_ns
+
+        print("Backend didn't complete contraction")
+        return None, None
 
     def __str__(self):
         return f"data {self.data}\nindices {self.indices}\nindptr {self.indptr}"
@@ -138,16 +168,25 @@ def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
 # Just a quick test to make sure everything is working. Also demonstrates usage
 if __name__ == "__main__":
     print("Driver test:")
-    # A = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
-    # B = Tensor(filename="../test_tensors/fiber_ax2.csfbin")
-    A = Tensor(random(5, 10, density=0.9, format='csr'))
-    B = Tensor(random(5, 10, density=0.9, format='csr'))
-    C = A.contract_last(B, show_log=True)
-    C[0].sort_indices()
-    print(*C, "ns")
+    A = Tensor(filename=FILE_LHS)
+    B = Tensor(filename=FILE_RHS)
+    TEST_NUM = "02"
+    # A = Tensor(filename=f"../test_tensors/{TEST_NUM}lhs.csfbin")
+    # B = Tensor(filename=f"../test_tensors/{TEST_NUM}rhs.csfbin")
+    # while True:
+    #     A = Tensor(random(5, 3, density=1, format='csr'))
+    #     B = Tensor(random(5, 3, density=1, format='csr'))
     C_2 = A.contract_last(B, sim=False)
-    C_2[0].sort_indices()
     print(*C_2, "ns")
+    C = A.contract_last(B)#, show_log=True)
+    #     if C[0] is not None:
+    #         break
+    #     input("Failed. Press enter to try again")
+    print(*C, "ns")
+
+    # for file in (FILE_LHS, FILE_RHS, FILE_RES):
+    #     if os.path.exists(file):
+    #         os.unlink(file)
     # assert not (C[0] != C_2[0]).any()
 
     # T = read_csf_file_repeat("../test_inputs/fiber_a.csf", 2)

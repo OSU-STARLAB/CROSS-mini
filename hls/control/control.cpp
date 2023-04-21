@@ -89,9 +89,10 @@ void Control::contract() {
 		jobs.write(job{a_start, a_end, b_start, b_end, dest, dest_idx});
 
 		MODULE_INFO("incrementing from A:" << iter_A << " B:" << iter_B << "...");
-		cont = A.increment(iter_A);
+		cont = B.increment(iter_B);
 		if (!cont) {
-			cont = B.increment(iter_B);
+			cont = A.increment(iter_A);
+			cout << "===" << endl;
 		}
 		MODULE_INFO("   ...to  A:" << iter_A << " B:" << iter_B);
 		wait(1, SC_NS);
@@ -164,6 +165,7 @@ void Control::distribute_jobs() {
 		pes[i]->result_indices.write(j.dest_idx);
 		wait(1, SC_NS);
 		jobs_start[i].notify();
+		MODULE_INFO("Job sent to pe"<<i<<" with dest "<<j.destination);
 	}
 	// This could cause issues if a PE finishes before all jobs have been
 	// distributed in this first round
@@ -172,7 +174,7 @@ void Control::distribute_jobs() {
 	while (true) {
 		wait(PEs_done);
 		for (int i = 0; i < PE_COUNT; i++) {
-			if (jobs_done[i].triggered()) {
+			if (jobs_done[i].triggered() || !pes[i]->running) {
 				job j = jobs.read();
 				fiber_a_starts[i].write(j.a_start);
 				fiber_a_ends[i].write(j.a_end);
@@ -180,9 +182,9 @@ void Control::distribute_jobs() {
 				fiber_b_ends[i].write(j.b_end);
 				destinations[i].write(j.destination);
 				pes[i]->result_indices.write(j.dest_idx);
-				wait();
-				wait();
-				jobs_start[i].notify(2, SC_NS);
+				wait(1, SC_NS);
+				jobs_start[i].notify();
+				MODULE_INFO("Job sent to pe"<<i<<" with dest "<<j.destination);
 			}
 		}
 	}
@@ -256,6 +258,8 @@ void pack_pointer(std::ofstream & out, pointer_type value) {
 void pack_fiber_entry(std::ofstream & out, fiber_entry values) {
 	u_int32_t idx = values.index;
 	float val = values.value;
+	if (values.index == -1)
+		val = 0;
 	out.write(reinterpret_cast<char*>(&idx), 4);
 	out.write(reinterpret_cast<char*>(&val), 4);
 }
@@ -295,7 +299,7 @@ void Control::extract_tensor_file(std::string filename, pointer_type metadata_st
 	// actual entries, while saving fiber boundries
 	std::vector<pointer_type> fiber_bounds;
 	pointer_type offset = metadata[idx];
-	for (u_int32_t i = 0; i < fiber_ptr_count-1; i++) {
+	for (int32_t i = 0; i < fiber_ptr_count-1; i++) {
 		pointer_type start = metadata[idx++];
 		pointer_type end = metadata[idx];
 		fiber_bounds.push_back(start-offset);

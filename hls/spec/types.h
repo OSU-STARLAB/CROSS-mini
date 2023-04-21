@@ -42,14 +42,14 @@
 
 // Why would you want this smaller than 2?
 // Needs to be indexable by pointer_type (32 bits)
-#define MEMORY_SIZE 100000
+#define MEMORY_SIZE 1000000
 
 // can't be zero
 #define MEMORY_READ_LATENCY 2
 #define MEMORY_WRITE_LATENCY 3
 
 // can't be zero lol
-#define PE_COUNT 64
+#define PE_COUNT 10
 
 
 
