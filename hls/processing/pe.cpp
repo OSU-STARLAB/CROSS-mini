@@ -4,6 +4,7 @@ void PE::pe_done_watcher() {
     done = false;
     //int delay = 10;
     int counter = 0;
+    wait(job_start);
     while (true) {
         /*
         // wait(mem_done_c);

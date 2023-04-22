@@ -58,7 +58,7 @@ void Control::contract() {
 	}
 	metadata[append_idx++] = fiber_start + C_fiber_len;  // end of last fiber
 	wait(1, SC_NS);  // wait for that last write to actually happen
-	print_region(0, 20);
+	//print_region(0, 20);
 
 	// TODO: combine above and below loops? Iteration order seems different maybe
 
@@ -241,7 +241,7 @@ pointer_type Control::append_tensor_file(std::string filename) {
 	std::vector<fiber_entry> fiber;
 	for (int i = 0; i < len; i++) {
 		fiber.push_back(unpack_fiber_entry(in));
-		cout << fiber.back() << " ";
+		//cout << fiber.back() << " ";
 	}
 	pointer_type fiber_start = mem.append_fiber(fiber);
 	//pointer_type fiber_start = 1;

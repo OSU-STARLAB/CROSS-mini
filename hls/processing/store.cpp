@@ -4,8 +4,8 @@ void Store::store_main() {
     wait();
 
     while (true) {
-        mem_write_value = results.read();
         mem_write_address = destinations.read();
+        mem_write_value = results.read();
 
         do wait(); while (!mem_ready);  // ensure at least one cycle
         MODULE_INFO("notifying memory to write " << mem_write_value << " at " << mem_write_address);

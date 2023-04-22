@@ -15,7 +15,6 @@ from sparse import random, GCXS, tensordot
 import numpy as np
 
 SIM_EXE = "../accel_sim"
-BASELINE_EXE = "./baseline.py"
 FILE_LHS = "temp-lhs.csfbin"
 FILE_RHS = "temp-rhs.csfbin"
 FILE_RES = "temp-res.csfbin"
@@ -65,8 +64,7 @@ class Tensor(GCXS):
                 cmp_axs = list(i for i in range(order-1))
                 super().__init__(
                         (np.array(data), np.array(indices), ptrs),
-                        shape=shape, compressed_axes=cmp_axs)  # , prune=True)
-                # self.eliminate_zeros()
+                        shape=shape, compressed_axes=cmp_axs, prune=True)
         else:
             super().__init__(*args, **kwargs)
 
@@ -95,24 +93,33 @@ class Tensor(GCXS):
         with open(filename, "wb") as file:
             file.write(self.serialize())
 
+    def software_contract(self, rhs):
+        """ inner loop of software implementation that gets timed """
+        return tensordot(self, rhs, axes=(-1, -1))
+
     def contract_last(self, rhs, sim=True, show_log=False):
         """
         Contract two sparse tensors by offloading to backend: sim or baseline
         """
         assert isinstance(rhs, Tensor)
-        self.to_file(FILE_LHS)
-        rhs.to_file(FILE_RHS)
 
         # decide if we're actually gonna run the sim or just use Python
-        backend = SIM_EXE if sim else BASELINE_EXE
+        backend = SIM_EXE if sim else "software baseline"
         print("\n\nrunning", backend, "-----------------------------------\n")
+
         if not sim:
-            N = 100
-            TEST = "tensordot(self, rhs, axes=(-1, -1))"
-            total_sec = timeit.timeit(TEST, globals=globals(), number=N)
-            average_ns = int(total_sec * 1000 * 1000 * 1000 / N)  # sec->ms->us->ns
-            tensor_c = tensordot(self, rhs, axes=(-1, -1))
+            num = 2
+            test = "self.software_contract(rhs)"
+            my_globals = globals()
+            my_globals.update({'self': self, 'rhs': rhs})
+            total_sec = timeit.timeit(test, globals=my_globals, number=num)
+            # sec->ms->us->ns
+            average_ns = int(total_sec * 1000 * 1000 * 1000 / num)
+            tensor_c = self.software_contract(rhs)
             return tensor_c, average_ns
+
+        self.to_file(FILE_LHS)
+        rhs.to_file(FILE_RHS)
 
         # construct system() call
         if os.path.exists(FILE_RES):
@@ -154,9 +161,9 @@ if __name__ == "__main__":
     print("Driver test:")
     # A = Tensor(filename=FILE_LHS)
     # B = Tensor(filename=FILE_RHS)
-    TEST_NUM = "04"
-    A = Tensor(filename=f"../test_tensors/{TEST_NUM}lhs.csfbin")
-    B = Tensor(filename=f"../test_tensors/{TEST_NUM}rhs.csfbin")
+    # TEST_NUM = "04"
+    # A = Tensor(filename=f"../test_tensors/{TEST_NUM}lhs.csfbin")
+    # B = Tensor(filename=f"../test_tensors/{TEST_NUM}rhs.csfbin")
 
     def gen(*shape, density=.9):
         """
@@ -168,23 +175,26 @@ if __name__ == "__main__":
             shape=shape, density=density,
             format="gcxs", compressed_axes=cmp_axs))
 
-    with np.printoptions(suppress=True):
-        print("A:")
-        print(A.todense().round(6))
-        print("\nB:")
-        print(B.todense().round(6))
-        print("\nC:")
-        print(tensordot(A, B, axes=(-1, -1)).todense())
+    np.set_printoptions(suppress=True)
+
+    # with np.printoptions(suppress=True):
+    #     print("A:")
+    #     print(A.todense().round(6))
+    #     print("\nB:")
+    #     print(B.todense().round(6))
+    #     print("\nC:")
+    #     print(tensordot(A, B, axes=(-1, -1)).todense())
 
     while True:
-        # A = gen(4, 50, density=0.1)
-        # B = gen(5, 50, density=0.1)
+        A = gen(3, 2, 4, 5, density=0.1)
+        B = gen(5, 3, 2, 5, density=0.1)
+        # print(tensordot(A, B, axes=(-1, -1)).todense())
         C = A.contract_last(B)
-        print(*C, "ns")
+        print(C[1], "ns")
         print(C[0].todense())
-        if -1 in C[0].indices:
-            break
-        break
+        C = A.contract_last(B, sim=False)
+        print(C[1], "ns")
+        print(C[0].todense())
 
     # try:
     #     C_2 = A.contract_last(B, sim=False)

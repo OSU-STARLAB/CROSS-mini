@@ -75,8 +75,8 @@ void Top::top_main() {
 	pointer_type tc = control.tensor_C.read();
 	wait(1, SC_NS);
 	control.extract_tensor_file(filename_res, tc);
-	control.print_region(0, 50);
-	control.mem.print_region(0, 200);
+	//control.print_region(0, 50);
+	//control.mem.print_region(0, 200);
 
     sc_stop();
 }
