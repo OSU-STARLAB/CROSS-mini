@@ -38,18 +38,19 @@
     value. Any constraints should be mentioned for each value.
 */
 
-#define INTERSECTION_FIFO_SIZE 32
+#define INTERSECTION_FIFO_SIZE 8
 
 // Why would you want this smaller than 2?
 // Needs to be indexable by pointer_type (32 bits)
 #define MEMORY_SIZE 1000000
 
 // can't be zero
+// TODO: make these reasonable
 #define MEMORY_READ_LATENCY 2
 #define MEMORY_WRITE_LATENCY 3
 
 // can't be zero lol
-#define PE_COUNT 16
+#define PE_COUNT 3
 
 
 

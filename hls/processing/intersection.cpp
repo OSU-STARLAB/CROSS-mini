@@ -42,8 +42,9 @@ void Intersection::intersection_main() {
                     fiber_a.num_available() == 0 &&
                     fiber_b.num_available() == 0) {
                 // actually done
-                MODULE_INFO("emitting");
+                MODULE_INFO("emitting " << accumulator);
                 results.write(accumulator);
+                //wait(1, SC_NS);
                 accumulator = 0;
 
                 // trigger "advance both" condition next to re-initialize
@@ -109,25 +110,25 @@ void Intersection::intersection_main() {
         } else if (ent_a.index < ent_b.index) {
             // advance only a
             MODULE_INFO("trying to advance a");
-            if (fiber_a.nb_read(ent_a)) {
-                MODULE_INFO("just received ent_a = " << ent_a);
-                just_read = true;
-            }
             if (done_a && !fiber_a.num_available()) {
                 MODULE_INFO("...but it's done");
                 just_read = false;
+            }
+            if (fiber_a.nb_read(ent_a)) {
+                MODULE_INFO("just received ent_a = " << ent_a);
+                just_read = true;
             }
 
         } else if (ent_a.index > ent_b.index){
             // advance only b
             MODULE_INFO("trying to advance b");
-            if (fiber_b.nb_read(ent_b)) {
-                MODULE_INFO("just received ent_b = " << ent_b);
-                just_read = true;
-            }
             if (done_b && !fiber_b.num_available()) {
                 MODULE_INFO("...but it's done");
                 just_read = false;
+            }
+            if (fiber_b.nb_read(ent_b)) {
+                MODULE_INFO("just received ent_b = " << ent_b);
+                just_read = true;
             }
 
         } else {

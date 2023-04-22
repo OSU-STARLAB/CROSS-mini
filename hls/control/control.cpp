@@ -99,18 +99,26 @@ void Control::contract() {
 	}
 	MODULE_INFO("Done generating jobs. Waiting for PEs to take them");
 	// wait until all PEs finish
-	while (true) {
-		if (jobs.num_available() == 0)
-			break;
-		wait(1, SC_NS);
-	}
+	while (jobs.num_available() != 0) wait(1, SC_NS);
+
 	wait(MEMORY_READ_LATENCY, SC_NS);
 	MODULE_INFO("job queue empty. Waiting for PEs to finish")
+	for (int i = 0; i < PE_COUNT; i++) {
+        pes[i]->result_indices.write(-1);
+    }
+	for (int i = 0; i < PE_COUNT; i++) {
+		//while (!pes[i]->done.read())
+		while (pes[i]->running.read())
+		//while (!(pes[i]->done.read() && !pes[i]->running.read()))
+			wait(1, SC_NS);
+		MODULE_INFO("PE " << i << " done");
+	}/*
+    wait(1, SC_NS);
 	for (int i = 0; i < PE_COUNT; i++) {
 		while (pes[i]->running.read() != false)
 			wait(1, SC_NS);
 		MODULE_INFO("PE " << i << " done");
-	}
+	}*/
 	MODULE_INFO("all PEs seem to be done");
 	contract_done.notify();
 }
@@ -163,12 +171,10 @@ void Control::distribute_jobs() {
 		fiber_b_ends[i].write(j.b_end);
 		pes[i]->destinations.write(j.destination);
 		pes[i]->result_indices.write(j.dest_idx);
-		jobs_start[i].notify(1, SC_NS);
+		jobs_start[i].notify(2, SC_NS);
 		MODULE_INFO("Job sent to pe"<<i<<" with dest "<<j.destination);
 		wait(1, SC_NS);
 	}
-	// This could cause issues if a PE finishes before all jobs have been
-	// distributed in this first round
 
 	// round robin. TODO: maybe make this not be round robin
 	while (true) {
@@ -182,7 +188,7 @@ void Control::distribute_jobs() {
 				fiber_b_ends[i].write(j.b_end);
 				pes[i]->destinations.write(j.destination);
 				pes[i]->result_indices.write(j.dest_idx);
-				jobs_start[i].notify(1, SC_NS);
+				jobs_start[i].notify();
 				MODULE_INFO("Job sent to pe"<<i<<" with dest "<<j.destination);
 				wait(1, SC_NS);
 			}

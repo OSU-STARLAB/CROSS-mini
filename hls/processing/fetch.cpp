@@ -9,33 +9,47 @@ void Fetch::fetch_main() {
     while (true) {
         // get job
         wait(job_start);
+        wait(1, SC_NS); // allow job data to actually get written
         done = 0;
         stop_addr = end_addr;
 		//stop_addr++;
         curr_addr = start_addr;
-        MODULE_INFO("job is to read from " << curr_addr << " to " << stop_addr-1);
+        if (curr_addr != stop_addr) {
+            MODULE_INFO("job is to read from " << curr_addr << " to " << stop_addr-1);
+        } else {
+            MODULE_INFO("job is to read len 0 at " << curr_addr);
+        }
         wait();
 
-        // run job
-        while (curr_addr != stop_addr) {
-            // fetch next element: request
+        // special handling for empty jobs
+        if (curr_addr >= stop_addr) {
             while (!mem_ready) wait();
-            mem_read_address.write(curr_addr);
-            wait(1);
-            mem_read.notify();
+            MODULE_INFO("job is empty. Skipping.")
+            fiber_out.write(fiber_entry(0, 0));
+        } else {
 
-            // fetch: response
-            wait(mem_done);
+            // run job
+            while (curr_addr != stop_addr) {
+                // fetch next element: request
+                while (!mem_ready) wait();
+                mem_read_address.write(curr_addr);
+                wait(1);
+                mem_read.notify();
 
-            MODULE_INFO("fetched " << mem_res_value << " from " << curr_addr);
+                // fetch: response
+                wait(mem_done);
 
-            // increment pointer
-            curr_addr += 1;
-            wait();
+                MODULE_INFO("fetched " << mem_res_value << " from " << curr_addr);
 
-            // send element to intersection unit
-            fiber_out.write(mem_res_value);
+                // increment pointer
+                curr_addr += 1;
+                wait();
+
+                // send element to intersection unit
+                fiber_out.write(mem_res_value);
+            }
         }
+        wait(1, SC_NS);
         done = 1;
         MODULE_INFO("finished job");
     }

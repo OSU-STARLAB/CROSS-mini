@@ -20,6 +20,8 @@ SC_MODULE(PE) {
     sc_event & job_start;  // control tells us to start
     sc_event & job_done;  // we tell control we're done
 	sc_signal<bool> running;
+	sc_signal<bool> done;
+	sc_signal<bool> done_internal;
 
     // connections with memory unit
     sc_in<bool> mem_ready;
@@ -41,7 +43,7 @@ SC_MODULE(PE) {
     sc_signal<bool> & fetch_a_done;
     sc_signal<bool> & fetch_b_done;
 
-    void pe_destination_fifo();
+    void pe_done_watcher();
     void pe_result_combiner();
     void job_done_notifier();
 	void pe_running_setter();
@@ -109,7 +111,7 @@ SC_MODULE(PE) {
 
         // internally there's a FIFO but externally it's a signal.
         // This thread queues them up.
-        SC_THREAD(pe_destination_fifo);
+        SC_THREAD(pe_done_watcher);
         SC_THREAD(pe_result_combiner);
         SC_THREAD(job_done_notifier);
 		SC_THREAD(pe_running_setter);

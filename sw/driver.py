@@ -2,14 +2,17 @@
 """
 functions and types for interacting with accelerator sim
 """
+import sys
+from IPython.core import ultratb
+sys.excepthook = ultratb.FormattedTB(color_scheme='Neutral', call_pdb=False)
 
+import timeit
 import struct
 import subprocess
 import os
 from itertools import starmap
-from scipy.sparse import csr_matrix, random
-
-TensorElement = float
+from sparse import random, GCXS, tensordot
+import numpy as np
 
 SIM_EXE = "../accel_sim"
 BASELINE_EXE = "./baseline.py"
@@ -36,7 +39,7 @@ def _entryunpacker(data):
     return struct.Struct("<if").unpack(data)
 
 
-class Tensor(csr_matrix):
+class Tensor(GCXS):
     """
     Data structure that corresponds to the format used in the accelerator
     """
@@ -47,25 +50,22 @@ class Tensor(csr_matrix):
             # Read a csfbin file, as described in formats.md
             with open(filename, "rb") as file:
                 order = _ptrunpacker(file.read(4))
-                shape = list(map(_ptrunpacker, [file.read(4) for _ in range(order)]))
-                entry_count = _ptrunpacker(file.read(4))
-                entries = list(map(_entryunpacker, [file.read(8) for _ in range(entry_count)]))
-                ptr_count = _ptrunpacker(file.read(4))
-                ptrs = list(map(_ptrunpacker, [file.read(4) for _ in range(ptr_count)]))
+                shape = list(_ptrunpacker(file.read(4)) for _ in range(order))
+                entry_cnt = _ptrunpacker(file.read(4))
+                entries = list(
+                        _entryunpacker(file.read(8)) for _ in range(entry_cnt))
+                ptr_cnt = _ptrunpacker(file.read(4))
+                ptrs = np.array(
+                        [_ptrunpacker(file.read(4)) for _ in range(ptr_cnt)])
                 (indices, data) = zip(*entries)
-                # fix up empty jobs
-                # indices = list(_indices)
-                # if indices[0] == -1:
-                #     indices[0] = 0
-                # if indices[-1] == -1:
-                #     indices[-1] = indices[-2] + 1
-                # for i in range(1, len(indices)-1):
-                #     if indices[i] == -1:
-                #         if indices[i+1] == 1:
-                #             indices[i] = 0
-                #         else:
-                #             indices[i] = indices[i-1] + 1
-                super().__init__((data, indices, ptrs), shape=shape)
+                print("data", data)
+                print("indices", indices)
+                print("indptrs", ptrs)
+                order = len(shape)
+                cmp_axs = list(i for i in range(order-1))
+                super().__init__(
+                        (np.array(data), np.array(indices), ptrs),
+                        shape=shape, compressed_axes=cmp_axs)  # , prune=True)
                 # self.eliminate_zeros()
         else:
             super().__init__(*args, **kwargs)
@@ -100,20 +100,34 @@ class Tensor(csr_matrix):
         Contract two sparse tensors by offloading to backend: sim or baseline
         """
         assert isinstance(rhs, Tensor)
-        # serialize self
         self.to_file(FILE_LHS)
-        # serialize rhs
         rhs.to_file(FILE_RHS)
 
-        # decide if we're actually gonna run the sim or just use scipy
+        # decide if we're actually gonna run the sim or just use Python
         backend = SIM_EXE if sim else BASELINE_EXE
+        print("\n\nrunning", backend, "-----------------------------------\n")
+        if not sim:
+            N = 100
+            TEST = "tensordot(self, rhs, axes=(-1, -1))"
+            total_sec = timeit.timeit(TEST, globals=globals(), number=N)
+            average_ns = int(total_sec * 1000 * 1000 * 1000 / N)  # sec->ms->us->ns
+            tensor_c = tensordot(self, rhs, axes=(-1, -1))
+            return tensor_c, average_ns
 
         # construct system() call
         if os.path.exists(FILE_RES):
             os.unlink(FILE_RES)
-        log = subprocess.check_output(
+        result = subprocess.run(
                 [backend, FILE_LHS, FILE_RHS, FILE_RES],
-                env={"SYSTEMC_DISABLE_COPYRIGHT_MESSAGE": "1"})
+                env={"SYSTEMC_DISABLE_COPYRIGHT_MESSAGE": "1"},
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        if result.returncode:
+            print(result.stdout.decode('UTF-8'))
+            if result.stderr:
+                print(result.stderr.decode('UTF-8'))
+            print("Badkend didn't complete contraction")
+            return None, None
+        log = result.stdout
 
         if show_log:
             print('\n'.join(log.decode('UTF-8').rsplit('\n', maxsplit=100)[-99:]))
@@ -125,7 +139,7 @@ class Tensor(csr_matrix):
 
         if os.path.exists(FILE_RES):
             result = Tensor(filename=FILE_RES)
-            result.sort_indices()  # make results easier to compare
+            # result.sort_indices()  # make results easier to compare
             return result, elapsed_ns
 
         print("Backend didn't complete contraction")
@@ -135,64 +149,50 @@ class Tensor(csr_matrix):
         return f"data {self.data}\nindices {self.indices}\nindptr {self.indptr}"
 
 
-def read_csf_file_repeat(filename: str, repeat: int, fiber_len: int = -1):
-    """
-    Read a single fiber from a file as a column of a sparse matrix.
-    The result is a sparse CSR matrix with shape (repeat, fiber_len)
-
-    filename:  The .csf file to read
-    repeat:    How many times to repeat this column?
-    fiber_len: How long is the column? It's sparse, so default is to assume
-               the last index is the highest one, but it could be higher.
-    """
-    with open(filename, "r", encoding="UTF-8") as file:
-        # gobble header with column names
-        file.readline()
-        # read rest of file into memory
-        pairs = [line.split(',') for line in file]
-        # grab first of each pair as coord and second as data
-        coords_single = [int(p[0]) for p in pairs]
-        # fit matrix height to data if length unspecified
-        if fiber_len < 1:
-            fiber_len = max(coords_single) + 1
-        coords = ([], coords_single * repeat)
-        data = [TensorElement(p[1]) for p in pairs]
-        # repeat single fiber many times
-        for i in range(repeat):
-            for _ in range(len(data)):
-                coords[0].append(i)
-        # convert to tensor format
-        return Tensor((data*repeat, coords), shape=(repeat, fiber_len))
-
-
 # Just a quick test to make sure everything is working. Also demonstrates usage
 if __name__ == "__main__":
     print("Driver test:")
-    A = Tensor(filename=FILE_LHS)
-    B = Tensor(filename=FILE_RHS)
-    TEST_NUM = "02"
-    # A = Tensor(filename=f"../test_tensors/{TEST_NUM}lhs.csfbin")
-    # B = Tensor(filename=f"../test_tensors/{TEST_NUM}rhs.csfbin")
-    # while True:
-    #     A = Tensor(random(5, 3, density=1, format='csr'))
-    #     B = Tensor(random(5, 3, density=1, format='csr'))
-    C_2 = A.contract_last(B, sim=False)
-    print(*C_2, "ns")
-    C = A.contract_last(B)#, show_log=True)
-    #     if C[0] is not None:
-    #         break
-    #     input("Failed. Press enter to try again")
-    print(*C, "ns")
+    # A = Tensor(filename=FILE_LHS)
+    # B = Tensor(filename=FILE_RHS)
+    TEST_NUM = "04"
+    A = Tensor(filename=f"../test_tensors/{TEST_NUM}lhs.csfbin")
+    B = Tensor(filename=f"../test_tensors/{TEST_NUM}rhs.csfbin")
 
+    def gen(*shape, density=.9):
+        """
+        apply settings I like
+        """
+        order = len(shape)
+        cmp_axs = list(i for i in range(order-1))
+        return Tensor(random(
+            shape=shape, density=density,
+            format="gcxs", compressed_axes=cmp_axs))
+
+    with np.printoptions(suppress=True):
+        print("A:")
+        print(A.todense().round(6))
+        print("\nB:")
+        print(B.todense().round(6))
+        print("\nC:")
+        print(tensordot(A, B, axes=(-1, -1)).todense())
+
+    while True:
+        # A = gen(4, 50, density=0.1)
+        # B = gen(5, 50, density=0.1)
+        C = A.contract_last(B)
+        print(*C, "ns")
+        print(C[0].todense())
+        if -1 in C[0].indices:
+            break
+        break
+
+    # try:
+    #     C_2 = A.contract_last(B, sim=False)
+    #     print(*C_2, "ns")
+    #     print(C_2[0].todense())
+    # except Exception as e:
+    #     print(e)
     # for file in (FILE_LHS, FILE_RHS, FILE_RES):
     #     if os.path.exists(file):
     #         os.unlink(file)
     # assert not (C[0] != C_2[0]).any()
-
-    # T = read_csf_file_repeat("../test_inputs/fiber_a.csf", 2)
-    # print(T)
-    # print("\npacked form:")
-    # print(T.serialize().hex())
-    # with open("../test_inputs/fiber_ax2.csfbin", "wb") as f:
-    #     f.write(T.serialize())
-    # print(Tensor(filename="../test_inputs/fiber_ax2.csfbin"))
