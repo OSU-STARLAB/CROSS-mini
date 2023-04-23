@@ -57,9 +57,9 @@ class Tensor(GCXS):
                 ptrs = np.array(
                         [_ptrunpacker(file.read(4)) for _ in range(ptr_cnt)])
                 (indices, data) = zip(*entries)
-                print("data", data)
-                print("indices", indices)
-                print("indptrs", ptrs)
+                # print("data", data)
+                # print("indices", indices)
+                # print("indptrs", ptrs)
                 order = len(shape)
                 cmp_axs = list(i for i in range(order-1))
                 super().__init__(
@@ -97,24 +97,22 @@ class Tensor(GCXS):
         """ inner loop of software implementation that gets timed """
         return tensordot(self, rhs, axes=(-1, -1))
 
-    def contract_last(self, rhs, sim=True, show_log=False):
+    def contract_last(self, rhs, accel=True, show_log=False, avg_of=10):
         """
         Contract two sparse tensors by offloading to backend: sim or baseline
         """
         assert isinstance(rhs, Tensor)
 
         # decide if we're actually gonna run the sim or just use Python
-        backend = SIM_EXE if sim else "software baseline"
-        print("\n\nrunning", backend, "-----------------------------------\n")
+        backend = SIM_EXE if accel else "software baseline"
 
-        if not sim:
-            num = 2
+        if not accel:
             test = "self.software_contract(rhs)"
             my_globals = globals()
             my_globals.update({'self': self, 'rhs': rhs})
-            total_sec = timeit.timeit(test, globals=my_globals, number=num)
+            total_sec = timeit.timeit(test, globals=my_globals, number=avg_of)
             # sec->ms->us->ns
-            average_ns = int(total_sec * 1000 * 1000 * 1000 / num)
+            average_ns = int(total_sec * 1000 * 1000 * 1000 / avg_of)
             tensor_c = self.software_contract(rhs)
             return tensor_c, average_ns
 
@@ -156,46 +154,52 @@ class Tensor(GCXS):
         return f"data {self.data}\nindices {self.indices}\nindptr {self.indptr}"
 
 
+def accel_speedup_test(shape_a, shape_b, density, avg_of=10):
+    order = len(shape_a)
+    cmp_axs = list(i for i in range(order-1))
+    tensor_a = Tensor(random(
+        shape=shape_a, density=density,
+        format="gcxs", compressed_axes=cmp_axs))
+    order = len(shape_b)
+    cmp_axs = list(i for i in range(order-1))
+    tensor_b = Tensor(random(
+        shape=shape_b, density=density,
+        format="gcxs", compressed_axes=cmp_axs))
+
+    # print(tensordot(A, B, axes=(-1, -1)).todense())
+    _, ns_sw = tensor_a.contract_last(tensor_b, accel=False, avg_of=avg_of)
+    _, ns_hw = tensor_a.contract_last(tensor_b)
+    return ns_sw/ns_hw
+
+
 # Just a quick test to make sure everything is working. Also demonstrates usage
 if __name__ == "__main__":
-    print("Driver test:")
+    print("=== driver test ===")
+    shapes = (
+        (2, 3, 2, 50),
+        (3, 4, 2, 50)
+    )
+    warmup = 3
+    if warmup:
+        print("warmup", end='', flush=True)
+    try:
+        while True:
+            speedup = accel_speedup_test(*shapes, 0.1, 100)
+            if warmup:
+                print(".", end='', flush=True)
+                warmup -= 1
+                if not warmup:
+                    print("done")
+                continue
+            print(f"speedup: {speedup:.0f}x")
+    except KeyboardInterrupt:
+        print(" quit")
+
     # A = Tensor(filename=FILE_LHS)
     # B = Tensor(filename=FILE_RHS)
     # TEST_NUM = "04"
     # A = Tensor(filename=f"../test_tensors/{TEST_NUM}lhs.csfbin")
     # B = Tensor(filename=f"../test_tensors/{TEST_NUM}rhs.csfbin")
-
-    def gen(*shape, density=.9):
-        """
-        apply settings I like
-        """
-        order = len(shape)
-        cmp_axs = list(i for i in range(order-1))
-        return Tensor(random(
-            shape=shape, density=density,
-            format="gcxs", compressed_axes=cmp_axs))
-
-    np.set_printoptions(suppress=True)
-
-    # with np.printoptions(suppress=True):
-    #     print("A:")
-    #     print(A.todense().round(6))
-    #     print("\nB:")
-    #     print(B.todense().round(6))
-    #     print("\nC:")
-    #     print(tensordot(A, B, axes=(-1, -1)).todense())
-
-    while True:
-        A = gen(3, 2, 4, 5, density=0.1)
-        B = gen(5, 3, 2, 5, density=0.1)
-        # print(tensordot(A, B, axes=(-1, -1)).todense())
-        C = A.contract_last(B)
-        print(C[1], "ns")
-        print(C[0].todense())
-        C = A.contract_last(B, sim=False)
-        print(C[1], "ns")
-        print(C[0].todense())
-
     # try:
     #     C_2 = A.contract_last(B, sim=False)
     #     print(*C_2, "ns")

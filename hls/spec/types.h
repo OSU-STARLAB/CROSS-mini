@@ -50,7 +50,7 @@
 #define MEMORY_WRITE_LATENCY 70
 
 // can't be zero lol
-#define PE_COUNT 3
+#define PE_COUNT 128
 
 
 
