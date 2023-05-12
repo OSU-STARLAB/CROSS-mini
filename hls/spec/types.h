@@ -42,7 +42,7 @@
 
 // Why would you want this smaller than 2?
 // Needs to be indexable by pointer_type (32 bits)
-#define MEMORY_SIZE 100000
+#define MEMORY_SIZE 10000000
 
 // can't be zero
 // TODO: make these reasonable

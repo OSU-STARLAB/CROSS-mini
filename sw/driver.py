@@ -2,10 +2,6 @@
 """
 functions and types for interacting with accelerator sim
 """
-import sys
-from IPython.core import ultratb
-sys.excepthook = ultratb.FormattedTB(color_scheme='Neutral', call_pdb=False)
-
 import timeit
 import struct
 import subprocess
@@ -97,7 +93,7 @@ class Tensor(GCXS):
         """ inner loop of software implementation that gets timed """
         return tensordot(self, rhs, axes=(-1, -1))
 
-    def contract_last(self, rhs, accel=True, show_log=False, avg_of=10):
+    def contract_last(self, rhs, accel=True, show_log=False):
         """
         Contract two sparse tensors by offloading to backend: sim or baseline
         """
@@ -110,9 +106,9 @@ class Tensor(GCXS):
             test = "self.software_contract(rhs)"
             my_globals = globals()
             my_globals.update({'self': self, 'rhs': rhs})
-            total_sec = timeit.timeit(test, globals=my_globals, number=avg_of)
+            total_sec = timeit.timeit(test, globals=my_globals, number=1)
             # sec->ms->us->ns
-            average_ns = int(total_sec * 1000 * 1000 * 1000 / avg_of)
+            average_ns = int(total_sec * 1000 * 1000 * 1000)
             tensor_c = self.software_contract(rhs)
             return tensor_c, average_ns
 
@@ -167,9 +163,15 @@ def accel_speedup_test(shape_a, shape_b, density, avg_of=10):
         format="gcxs", compressed_axes=cmp_axs))
 
     # print(tensordot(A, B, axes=(-1, -1)).todense())
-    _, ns_sw = tensor_a.contract_last(tensor_b, accel=False, avg_of=avg_of)
+    tensor_a.contract_last(tensor_b, accel=False)
+    res = []
+    for i in range(avg_of):
+        _, ns_sw = tensor_a.contract_last(tensor_b, accel=False)
+        res.append(ns_sw)
     _, ns_hw = tensor_a.contract_last(tensor_b)
-    return ns_sw/ns_hw
+    ns_sw = np.mean(res)
+    sw_stdev = np.std(np.array(res)/ns_hw)
+    return ns_sw/ns_hw, sw_stdev
 
 
 # Just a quick test to make sure everything is working. Also demonstrates usage
