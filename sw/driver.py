@@ -123,15 +123,15 @@ class Tensor(GCXS):
                 env={"SYSTEMC_DISABLE_COPYRIGHT_MESSAGE": "1"},
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         if result.returncode:
-            print(result.stdout.decode('UTF-8'))
+            print(result.stdout.decode('UTF-8')[-10000:])
             if result.stderr:
-                print(result.stderr.decode('UTF-8'))
+                print(result.stderr.decode('UTF-8')[-10000:])
             print("Badkend didn't complete contraction")
             return None, None
         log = result.stdout
 
         if show_log:
-            print('\n'.join(log.decode('UTF-8').rsplit('\n', maxsplit=100)[-99:]))
+            print('\n'.join(log.decode('UTF-8').rsplit('\n', maxsplit=100)[-50:]))
         # get runtime from last line of backend output
         time_report = log.rsplit(b'\n', maxsplit=2)[-2]
         elapsed_ns = int(float(time_report.rsplit(b' ', maxsplit=3)[-2]))
@@ -150,6 +150,21 @@ class Tensor(GCXS):
         return f"data {self.data}\nindices {self.indices}\nindptr {self.indptr}"
 
 
+def accel_timing_test(shape_a, shape_b, density):
+    order = len(shape_a)
+    cmp_axs = list(i for i in range(order-1))
+    tensor_a = Tensor(random(
+        shape=shape_a, density=density,
+        format="gcxs", compressed_axes=cmp_axs))
+    order = len(shape_b)
+    cmp_axs = list(i for i in range(order-1))
+    tensor_b = Tensor(random(
+        shape=shape_b, density=density,
+        format="gcxs", compressed_axes=cmp_axs))
+
+    return tensor_a.contract_last(tensor_b)
+
+
 def accel_speedup_test(shape_a, shape_b, density, avg_of=10):
     order = len(shape_a)
     cmp_axs = list(i for i in range(order-1))
@@ -162,13 +177,14 @@ def accel_speedup_test(shape_a, shape_b, density, avg_of=10):
         shape=shape_b, density=density,
         format="gcxs", compressed_axes=cmp_axs))
 
-    # print(tensordot(A, B, axes=(-1, -1)).todense())
     tensor_a.contract_last(tensor_b, accel=False)
     res = []
     for i in range(avg_of):
         _, ns_sw = tensor_a.contract_last(tensor_b, accel=False)
         res.append(ns_sw)
     _, ns_hw = tensor_a.contract_last(tensor_b)
+    if not ns_hw:
+        return None, None
     ns_sw = np.mean(res)
     sw_stdev = np.std(np.array(res)/ns_hw)
     return ns_sw/ns_hw, sw_stdev
