@@ -180,7 +180,9 @@ void Control::distribute_jobs() {
 	while (true) {
 		wait(PEs_done);
 		for (int i = 0; i < PE_COUNT; i++) {
-			if (jobs_done[i].triggered() || !pes[i]->running) {
+			if (jobs_done[i].triggered()) {
+				while(pes[i]->running) {wait();}
+				
 				job j = jobs.read();
 				fiber_a_starts[i].write(j.a_start);
 				fiber_a_ends[i].write(j.a_end);
