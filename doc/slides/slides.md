@@ -313,9 +313,7 @@ And all this fits in less than half a square millimeter
 ## How did it do?
 
 - Linear time complexity as expected
-- ~750x speedup at high-order high-sparsity
-- Peak of 1400x speedup in AI workload
-- Matrix math is less stunning, still good
+- (add something)
 
 ::: notes
 
@@ -325,7 +323,7 @@ And all this fits in less than half a square millimeter
 
 ---
 
-![](figs/plot_a_nnz.png)
+![](figs/narc.png)
 
 ::: notes
 
@@ -335,7 +333,7 @@ And all this fits in less than half a square millimeter
 
 ___
 
-![](figs/plot_b_order.png)
+![](figs/result.png)
 
 ::: notes
 
@@ -351,7 +349,7 @@ ___
 
 ___
 
-![](figs/plot_c_matrix.png)
+![](figs/speedup.png)
 
 ::: notes
 
@@ -363,7 +361,7 @@ Error bars are standard deviation of 20 runs
 
 ---
 
-![](figs/perf_table.png)
+![](figs/area.png)
 
 # Conclusion
 
