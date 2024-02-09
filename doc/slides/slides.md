@@ -27,19 +27,9 @@ Depends on the question.
 
 ***FLAASH: Flexible Accelerator Architecture  
 for Sparse High-Order Tensor Contraction***  
-*Gabriel Kulp, Lizhong Chen*  
+*Gabriel Kulp, Andrew Ensinger, Lizhong Chen*  
 ![](figs/FLAASH-cover.png){ width=200px }  
-Paper submitted to NeurIPS three weeks ago
-
-::: notes
-
-Acknowledge and thank:
-
-- My wife Kendrea for so much help with editing and morale
-- My coworker Asif for slogging away to get a die area estimate for the final design.
-- All of my presentation practice run audiences, including my in-laws and several people in this room.
-
-:::
+Paper submitted to ICML two weeks ago
 
 ## Roadmap
 
@@ -48,31 +38,25 @@ Acknowledge and thank:
 	- What is sparse tensor contraction?
 	- What are accelerators?
 3. **Methods and Results**
-	- What did I do?
+	- What did we do?
 	- Did it work?
-4. **Questions**
-	- Public and private portions
+4. **Future Work**
+	- Where can we collaborate?
 
 ## Summary
 
-- I designed an architecture
+- We designed an architecture in simulation
 - It contracts sparse high-order tensors
-- I also implemented it in simulation
-- The implementation does well (~1000x)
-
-::: notes
-
-1000x sounds like a lot, but normal for accelerator. Shows it works.
-
-:::
+- We also implemented it in Verilog
+- The benchmark does well (~25x)
 
 # Background
 
 ## Things I want to teach you
 
-- What kind of math am I doing?
+- What kind of math is this?
 - Why would anyone want that?
-- What have others done before me?
+- What have others done before us?
 
 ## What is a tensor?
 
@@ -147,7 +131,7 @@ It's symmetric, doesn't need to be.
 ## What is an accelerator?
 
 - CPUs are general
-- GPUs do something specific
+- GPUs are more specific
 - GPUs are accelerators
 - Accelerators do something specific
 
@@ -223,9 +207,9 @@ Only targets software
 
 ::: notes
 
-- Fancy picture to impress NeurIPS reviewers
+- Fancy picture to impress ICML reviewers
 - Don't be scared, focus on the middle
-- My arch, my implementation
+- Our arch, our implementation
 
 :::
 
