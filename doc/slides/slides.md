@@ -298,22 +298,22 @@ And all this fits in less than half a square millimeter
 
 ## How did I get results?
 
-- Wrote accelerator in SystemC HLS
-- Wrote driver and library in Python
+- Wrote accelerator in Verilog
+- Simulate performance with Xilinx Vivado
 - Compare simulated performance to software
-- Baseline is PyData *sparse* library
+- Baseline is PyTorch and Tensorflow
 
 ::: notes
 
-- SystemC is for making new architectures
-- *Sparse* has similar formats, supports high-order
+- Used the best unstructured sparsity options available
 
 :::
 
 ## How did it do?
 
 - Linear time complexity as expected
-- (add something)
+- Believable speedup over existing tools
+- Reasonable clock speed and area
 
 ::: notes
 
@@ -364,12 +364,6 @@ Error bars are standard deviation of 20 runs
 ![](figs/area.png)
 
 # Conclusion
-
-## Summary
-
-1. Pick a niche problem that's useful
-2. Design architecture that fixes existing shortcomings
-3. Begin to evaluate with a simulation
 
 ## Future work
 
