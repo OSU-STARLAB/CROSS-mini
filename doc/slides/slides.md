@@ -10,7 +10,7 @@ controls: false
 ### Accelerator Architecture <br> for Sparse High-Order <br> Tensor Contraction
 
 Gabriel Kulp, Andrew Ensinger  
-June 7, 2023
+February 28, 2023
 
 ::: notes
 
@@ -29,7 +29,7 @@ Depends on the question.
 for Sparse High-Order Tensor Contraction***  
 *Gabriel Kulp, Andrew Ensinger, Lizhong Chen*  
 ![](figs/FLAASH-cover.png){ width=200px }  
-Paper submitted to ICML two weeks ago
+Paper submitted to ICML this month 
 
 ## Roadmap
 
@@ -61,7 +61,7 @@ Paper submitted to ICML two weeks ago
 ## What is a tensor?
 
 - Multi-dimensional array
-- Represented multilinear transform
+- Represents a multilinear transform
 - Many applications
 
 ::: notes
@@ -161,43 +161,6 @@ GPUs good at neural networks, too: similar workload
 	- Depends on compression format, might look random
 
 :::
-
-## Prior Work
-
-- Focuses on 2D data only
-- Focuses on structured sparsity
-- Only targets software
-
-::: notes
-
-- Prior work *from others*.
-- Nobody else has done sparse high-order in hardware
-- I'll flash through authors in case you know them
-- Full citations in my actual thesis
-
-:::
-
----
-
-Focuses on 2D data only
-
-- Y. Wang, C. Zhang, Z. Xie, C. Guo, Y.Liu, and J. Leng
-- C. Tillinghast and S. Zhe
-- J. Liu, J. Ren, R. Gioiosa, D. Li, and J. Li
-
----
-
-Focuses on structured sparsity
-
-- Z. Chen, Z. Qu, L. Liu, Y. Ding, and Y. Xie
-- J. Yue, et al. (STICKER-IM)
-
----
-
-Only targets software
-
-- F. Kjolstad, S. Kamil, S. Chou, D. Lugato, and S. Amarasinghe
-- Z. Du, Y. Guan, T. Guan, D. Niu, L. Huang, H. Zheng, and Y. Xie
 
 # Methods
 
